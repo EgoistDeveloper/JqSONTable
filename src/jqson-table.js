@@ -360,6 +360,10 @@
         tableLoader(true, $(this));
     };
 
+    $.fn.jqSonTableReload = function () {
+        tableLoader(true, $(this));
+    };
+
     $.jqSonTableOptions = function (customOptions) {
         if (customOptions) {
             $.extend(true, options, customOptions);

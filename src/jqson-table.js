@@ -170,11 +170,16 @@
                 '</button>' +
                 '<div class="dropdown-menu">';
 
-            options[id].table.actions.forEach(function (value, key) {
-                rowContent +=
-                    '<button data-action="' + value.action + '" class="dropdown-item dropdown-item-red" type="button"><i class="' + value.icon + '"></i>' +
-                    (options[id].language ? options[id].language[value.text] : value.text) +
+            options[id].table.actions.forEach(function (_value, _key) {
+                if (_value.actionItem){
+                    var actionItem = _value.actionItem(key, value);
+                    rowContent += actionItem;
+                } else {
+                    rowContent +=
+                    '<button data-action="' + _value.action + '" class="dropdown-item dropdown-item-red" type="button"><i class="' + _value.icon + '"></i>' +
+                    (options[id].language ? options[id].language[_value.text] : _value.text) +
                     '</button>';
+                }
             });
 
             rowContent += '</div>' +
@@ -245,47 +250,48 @@
 
         // left arrow: goes to previous page
         if (page != 1) {
-            pagination = '<button data-index="' + (page - 1) + '" class="btn btn-default" title="' + lang.ui_go_to_page + ((page - 1)) + '">&laquo;</button>';
+            pagination = '<button data-index="' + (page - 1) + '" class="btn btn-default">&laquo;</button>';
         } else {
-            pagination = '<button disabled data-index="' + start + '" class="btn btn-default" title="' + lang.ui_you_are1 + '">&laquo;</button>';
+            pagination = '<button disabled data-index="' + start + '" class="btn btn-default"">&laquo;</button>';
         }
 
         // first page
         if (start > 1) {
-            pagination += '<button data-index="1" class="btn btn-default" title="' + lang.ui_page + (start) + '">1</button>';
+            pagination += '<button data-index="1" class="btn btn-default">1</button>';
             if (start > 6) {
                 pagination += '<button class="btn btn-default">...</button>';
             }
         }
 
         // middle pages
-        for (var i = 0; i < last; i++) {
+        for (var i = 0; i < last-1; i++) {
             var _page = start+i;
 
-            if (i <= 10 && page != 1) {
+            if (i <= 10) {
                 if (_page == page) {
-                    pagination += '<button data-index="' + _page + '" class="btn btn-default active" title="' + lang.ui_page + (_page) + '">' + _page + '</button>';
-                } else if (_page != page) {
-                    pagination += '<button data-index="' + _page + '" class="btn btn-default" title="' + lang.ui_page + (_page) + '">' + _page + '</button>';
+                    pagination += '<button data-index="' + _page + '" class="btn btn-default active">' + _page + '</button>';
+                } else if (_page != last){
+                    pagination += '<button data-index="' + _page + '" class="btn btn-default"">' + _page + '</button>';
                 }
             }
         }
 
         // last page or dot dot dot
         if (end < last) {
-            if ((last - page) > 5) {
+            if ((last - page) > 10) {
                 pagination += '<button class="btn btn-default">...</button>';
             }
+            console.log(_page);
 
-            pagination += '<button data-index="' + last + '" class="btn btn-default" title="' + lang.ui_page + (last) + '">' + last + '</button>';
+            pagination += '<button data-index="' + last + '" class="btn btn-default">' + last + '</button>';
         }
 
         // right arrow: goes to next page
         if (end != last) {
-            pagination += '<button data-index="' + (page + 1) + '" class="btn btn-default" title="' + lang.ui_go_to_page + (page + 1) + '">&raquo;</button>';
+            pagination += '<button data-index="' + (page + 1) + '" class="btn btn-default"">&raquo;</button>';
         } else {
-            pagination += '<button data-index="' + page + '" class="btn btn-default active" title="' + lang.ui_page + (page) + '">' + i + '</button>';
-            pagination += '<button disabled data-index="' + last + '" class="btn btn-default" title="' + lang.ui_you_are2 + '">&raquo;</button>';
+            pagination += '<button data-index="' + page + '" class="btn btn-default active">' + page + '</button>';
+            pagination += '<button disabled data-index="' + last + '" class="btn btn-default">&raquo;</button>';
         }
 
         return pagination;
@@ -327,16 +333,15 @@
             table = _this.parents('.jqson-table'),
             id = table.attr('id');
 
+            options[id].pagination.order = options[id].pagination.order === 'desc' ? 'asc' : 'desc';
             options[id].pagination.order_by = order_by;
 
         if (order === undefined || order == 'desc') {
-            options[id].pagination.order = 'asc';
             tableLoader(true, table, id);
 
             var head = $('a[href="#' + order_by + '"]');
             head.attr('data-order', 'asc').html(head.text() + ' <i class="fas fa-angle-double-up"></i>');
         } else if (order == 'asc') {
-            options[id].pagination.order = 'desc';
             tableLoader(true, table, id);
 
             var head = $('a[href="#' + order_by + '"]');
@@ -344,9 +349,20 @@
         }
     });
 
+    /**
+     * Table pagination action
+     */
+    $(document).on('click', '#pagination button', function () {
+        var _this = $(this),
+            table = _this.parents('#jqson-table').find('.jqson-table'),
+            id = table.attr('id');
+
+        options[id].pagination.page = _this.attr('data-index');
+        tableLoader(true, table, id);
+    });
+
     loadTable = function (table, id) {
         if (options[id].ajax) {
-            options[id].ajax.subUrl = table.attr('data-path')
             var response = ajaxGetTable(id);
 
             if (response) {
@@ -356,8 +372,10 @@
                     var tableHtml = tableBuilder(response.results, id);
                     table.html(tableHtml);
                         
-                    var pagination =  getPagination(response.page, response.start, response.end, response.last);
-                    table.next('.pagination').html(pagination);
+                    if (options[id].table.pagination){
+                        var pagination =  getPagination(response.page, response.start, response.end, response.last);
+                        table.next('.pagination').html(pagination);    
+                    }
 
                     previousResponse = response;
                 } else if (!options[id].ajax.preventReCreate) {

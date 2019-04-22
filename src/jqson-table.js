@@ -17,13 +17,16 @@
 
     var options = [];
 
+    /**
+     * Default options
+     */
     var defaultOptions = {
         ajax: {
             url: null,
             urlDelimeter: '&',
             timeOut: 30000,
             reloadDelay: 10,
-            preventReCreate: true,
+            preventReCreate: false,
             async: false,
             beforeSend: null,
             successCallback: null,
@@ -54,6 +57,12 @@
         language: null
     };
 
+    /**
+     * AJAX GET table data
+     * @param {*} jqXHR: jquery XHR error log
+     * @param {*} textStatus: error status
+     * @param {*} errorThrown: error thrown
+     */
     ajaxGetTable = function (id) {
         var _response = null,
             url = options[id].ajax.url + options[id].ajax.urlDelimeter + $.param(options[id].pagination);
@@ -74,7 +83,8 @@
                     options[id].ajax.successCallback(response);
                 }
 
-                _response = response;
+                _response = response.results;
+                window[id]['data'] = response.results;
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 if (options[id].ajax.logError) {
@@ -95,6 +105,12 @@
         return _response;
     };
 
+    /**
+     * AJAX error printer
+     * @param {*} jqXHR: jquery XHR error log
+     * @param {*} textStatus: error status
+     * @param {*} errorThrown: error thrown
+     */
     printError = function (jqXHR, textStatus, errorThrown) {
         console.log('--------------------------------------:');
         console.log('------------- ERROR Start ------------:');
@@ -108,6 +124,11 @@
         console.log('--------------------------------------:');
     }
 
+    /**
+     * JSON compare
+     * @param {*} json1
+     * @param {*} json2
+     */
     jsonEqual = function (json1, json2) {
         if (json1 == null || json2 == null) {
             return false;
@@ -116,6 +137,11 @@
         return JSON.stringify(json1) === JSON.stringify(json2) ? true : false;
     }
 
+    /**
+     * Diff minutes function, require for table load dates
+     * @param {*} date1: current time
+     * @param {*} date2: past time
+     */
     diffMinutes = function (date1, date2) {
         var diff = (date2.getTime() - date1.getTime()) / 1000;
         diff /= 60;
@@ -123,123 +149,41 @@
         return Math.abs(Math.round(diff));
     }
 
-    function setThead(href, text, id) {
-        var thead = '<th>{{{text}}}</th>';
-
-        if (href) {
-            thead = thead.replace('{{{text}}}', '<a href="#' + href + '">{{{text}}}</a>');
-        }
-
-        if (options[id].language && options[id].language[text]) {
-            thead = thead.replace('{{{text}}}', options[id].language[text]);
+    /**
+     * Universal table load and update controller
+     * @param {*} table: target table element 
+     * @param {*} id: table id attribute
+     */
+    function tableLoader(initial_load, table, id) {
+        if (table) {
+            if (initial_load || diffMinutes(new Date(), tableLastUpdate) >= options[id].ajax.reloadDelay) {
+                loadTable(table, id);
+            }
         } else {
-            thead = thead.replace('{{{text}}}', text.replace('_', ' '));
-        }
+            var _tables = $('table[id="jqson-table"]');
 
-        return thead;
-    }
+            if (_tables.length) {
+                _tables.forEach(function () {
+                    var _this = $(this),
+                        id = _this.attr('id');
 
-    function setTableRow(key, value, id) {
-        var trow = '<tr' + (value.id ? ' data-id="' + value.id + '"' : '') + '>{{{row}}}</tr>',
-            rowContent = '';
-
-        if (options[id].table.numbers) {
-            rowContent += '<td class="font-weight-bold">#' +
-                (((options[id].pagination.page * options[id].pagination.limit) - options[id].pagination.limit) + parseInt(key) + 1) +
-                '</td>';
-        }
-
-        if (typeof value === 'object') {
-            for (var key in value) {
-                if (options[id].table.except.indexOf(key) === -1 && typeof value[key] === 'string') {
-                    if (options[id].table.rowItem) {
-                        var rowItem = options[id].table.rowItem(key, value);
-
-                        rowContent += '<td>' + (rowItem ? rowItem : value[key]) + '</td>';
-                    } else {
-                        rowContent += '<td>' + value[key] + '</td>';
-                    }
-                }
-            }
-        }
-
-        if (options[id].table.actions) {
-            rowContent += '<td><div class="btn-group dropleft">' +
-                '<button type="button" class="btn btn-md btn-' + (options[id].table.actionColor ? options[id].table.actionColor : 'primary') + ' dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
-                (options[id].language && options[id].language.actions ? options[id].language.actions : options[id].table.actionsText) +
-                '</button>' +
-                '<div class="dropdown-menu">';
-
-            options[id].table.actions.forEach(function (_value, _key) {
-                if (_value.actionItem){
-                    var actionItem = _value.actionItem(key, value);
-                    rowContent += actionItem;
-                } else {
-                    rowContent +=
-                    '<button data-action="' + _value.action + '" class="dropdown-item dropdown-item-red" type="button"><i class="' + _value.icon + '"></i>' +
-                    (options[id].language ? options[id].language[_value.text] : _value.text) +
-                    '</button>';
-                }
-            });
-
-            rowContent += '</div>' +
-                '</div></td>';
-        }
-
-        return trow.replace('{{{row}}}', rowContent);
-    }
-
-    function tableBuilder(results, id) {
-        var table = '<thead><tr>';
-
-        if (results && results[0]) {
-            if (options[id].table.numbers && options[id].language) {
-                table += '<th>' + options[id].language.num + '</th>';
-            } else if (options[id].table.numbers && !options[id].language) {
-                table += '<th>' + options[id].table.numText + '</th>';
-            }
-
-            if (options[id].table.columns && options[id].table.columns.length) {
-                options[id].table.columns.forEach(function (value, key) {
-                    if (options[id].table.except.indexOf(value.text) === -1 && typeof value.text === 'string') {
-                        table += setThead(value.href, value.text, id);
+                    if (initial_load || diffMinutes(new Date(), tableLastUpdate) >= options[id].ajax.reloadDelay) {
+                        loadTable(_this, id);
                     }
                 });
             } else {
-                if (typeof results[0] === 'object') {
-
-                    for (var key in results[0]) {
-                        if (options[id].table.except.indexOf(key) === -1 && typeof results[0][key] === 'string') {
-                            table += setThead(key, key, id);
-                        }
-                    }
-                }
-            }
-
-            if (options[id].table.actions && options[id].language) {
-                table += '<th>' + options[id].language.actions + '</th>';
-            } else if (options[id].table.actions && !options[id].language) {
-                table += '<th>' + options[id].table.actionsText + '</th>';
-            }
-
-            table += '</tr></thead><tbody>'
-
-            if (typeof results === 'object') {
-                for (var key in results) {
-                    table += setTableRow(key, results[key], id);
-                }
+                clearInterval(tableUpdateLoop);
             }
         }
-        return table + '</tbody>';
     }
-
+    
     /**
      * pagination builder
      * 
-     * @param {*} page current page
-     * @param {*} start start page list of pages
-     * @param {*} end  end page list of pages
-     * @param {*} last last page
+     * @param {*} page: current page
+     * @param {*} start: start page list of pages
+     * @param {*} end:  end page list of pages
+     * @param {*} last: last page
      */
     function getPagination(page, start, end, last) {
         if (last == 1) {
@@ -298,32 +242,137 @@
     }
 
     /**
-     * Universal table load and update controller function
+     * Build table head / column titles
      * 
+     * @param {*} href: #order_string
+     * @param {*} text: column title
+     * @param {*} id: table id
      */
-    function tableLoader(initial_load, table, id) {
-        if (table) {
-            if (initial_load || diffMinutes(new Date(), tableLastUpdate) >= options[id].ajax.reloadDelay) {
-                loadTable(table, id);
-            }
+    function setThead(href, text, id) {
+        var thead = '<th>{{{text}}}</th>';
+
+        if (href) {
+            thead = thead.replace('{{{text}}}', '<a href="#' + href + '">{{{text}}}</a>');
+        }
+
+        if (options[id].language && options[id].language[text]) {
+            thead = thead.replace('{{{text}}}', options[id].language[text]);
         } else {
-            var _tables = $('table[id="jqson-table"]');
+            thead = thead.replace('{{{text}}}', text.replace('_', ' '));
+        }
 
-            if (_tables.length) {
-                _tables.forEach(function () {
-                    var _this = $(this),
-                        id = _this.attr('id');
+        return thead;
+    }
 
-                    if (initial_load || diffMinutes(new Date(), tableLastUpdate) >= options[id].ajax.reloadDelay) {
-                        loadTable(_this, id);
+    /**
+     * Build table row
+     * 
+     * @param {*} key: item index
+     * @param {*} value: ta array for row
+     * @param {*} id: table id
+     */
+    function setTableRow(key, value, id) {
+        var trow = '<tr' + (value.id ? ' data-id="' + value.id + '"' : '') + '>{{{row}}}</tr>',
+            rowContent = '';
+
+        if (options[id].table.numbers) {
+            rowContent += '<td class="font-weight-bold">#' +
+                (((options[id].pagination.page * options[id].pagination.limit) - options[id].pagination.limit) + parseInt(key) + 1) +
+                '</td>';
+        }
+
+        if (typeof value === 'object') {
+            for (var key in value) {
+                if (options[id].table.except.indexOf(key) === -1 && typeof value[key] === 'string') {
+                    if (options[id].table.rowItem) {
+                        var rowItem = options[id].table.rowItem(key, value);
+
+                        rowContent += '<td>' + (rowItem ? rowItem : value[key]) + '</td>';
+                    } else {
+                        rowContent += '<td>' + value[key] + '</td>';
+                    }
+                }
+            }
+        }
+
+        if (options[id].table.actions) {
+            rowContent += '<td><div class="btn-group dropleft">' +
+                '<button type="button" class="btn btn-md btn-' + (options[id].table.actionColor ? options[id].table.actionColor : 'primary') + ' dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
+                (options[id].language && options[id].language.actions ? options[id].language.actions : options[id].table.actionsText) +
+                '</button>' +
+                '<div class="dropdown-menu">';
+
+            options[id].table.actions.forEach(function (_value, _key) {
+                if (_value.actionItem){
+                    var actionItem = _value.actionItem(key, value);
+                    rowContent += actionItem;
+                } else {
+                    rowContent +=
+                    '<button data-action="' + _value.action + '" class="dropdown-item dropdown-item-blue" type="button"><i class="' + _value.icon + '"></i>' +
+                    (options[id].language ? options[id].language[_value.text] : _value.text) +
+                    '</button>';
+                }
+            });
+
+            rowContent += '</div>' +
+                '</div></td>';
+        }
+
+        return trow.replace('{{{row}}}', rowContent);
+    }
+
+    /**
+     * 
+     * @param {*} results 
+     * @param {*} id 
+     */
+    function tableBuilder(results, id) {
+        var table = '<thead><tr>';
+
+        if (results && results[0]) {
+            if (options[id].table.numbers && options[id].language) {
+                table += '<th>' + options[id].language.num + '</th>';
+            } else if (options[id].table.numbers && !options[id].language) {
+                table += '<th>' + options[id].table.numText + '</th>';
+            }
+
+            if (options[id].table.columns && options[id].table.columns.length) {
+                options[id].table.columns.forEach(function (value, key) {
+                    if (options[id].table.except.indexOf(value.text) === -1 && typeof value.text === 'string') {
+                        table += setThead(value.href, value.text, id);
                     }
                 });
             } else {
-                clearInterval(tableUpdateLoop);
+                if (typeof results[0] === 'object') {
+
+                    for (var key in results[0]) {
+                        if (options[id].table.except.indexOf(key) === -1 && typeof results[0][key] === 'string') {
+                            table += setThead(key, key, id);
+                        }
+                    }
+                }
+            }
+
+            if (options[id].table.actions && options[id].language) {
+                table += '<th>' + options[id].language.actions + '</th>';
+            } else if (options[id].table.actions && !options[id].language) {
+                table += '<th>' + options[id].table.actionsText + '</th>';
+            }
+
+            table += '</tr></thead><tbody>'
+
+            if (typeof results === 'object') {
+                for (var key in results) {
+                    table += setTableRow(key, results[key], id);
+                }
             }
         }
+        return table + '</tbody>';
     }
 
+    /**
+     * Table column order action
+     */
     $(document).on('click', '.jqson-table thead th a', function (e) {
         e.preventDefault();
 
@@ -361,15 +410,22 @@
         tableLoader(true, table, id);
     });
 
+    /**
+     * Load the table
+     * @param {*} table: target table element 
+     * @param {*} id: table id attribute
+     */
     loadTable = function (table, id) {
         if (options[id].ajax) {
+            // get json data with ajax get request
             var response = ajaxGetTable(id);
 
             if (response) {
                 if (options[id].ajax.preventReCreate && !jsonEqual(previousResponse, response)) { // ###
                     table.html(options[id].loader);
 
-                    var tableHtml = tableBuilder(response.results, id);
+                    // build the table with data
+                    var tableHtml = tableBuilder(response, id);
                     table.html(tableHtml);
                         
                     if (options[id].table.pagination){
@@ -379,6 +435,7 @@
 
                     previousResponse = response;
                 } else if (!options[id].ajax.preventReCreate) {
+                    // build the table with data
                     table.html(options[id].loader);
 
                     var tableHtml = tableBuilder(response, id);
@@ -387,18 +444,24 @@
                     var pagination =  getPagination(response.page, response.start, response.end, response.last);
                     table.next('.pagination').html(pagination);
                 }
+            } else {
+                console.log('There is no data.');
             }
         } else {
             // ###
         }
     }
 
+    /**
+     * JSON to table
+     */
     $.fn.jqSonTable = function (customOptions) {
-        var _this = $(this),
-            id = _this.attr('id');
+        var _this = $(this);
 
         if (_this.length) {
-            if (customOptions && !options[id]) {
+            var id = _this.attr('id');
+
+            if (customOptions) {
                 options[id] = $.extend(true, {}, defaultOptions, customOptions);
             }
 
@@ -406,10 +469,16 @@
         }
     };
 
+    /**
+     * Reload table action
+     */
     $.fn.jqSonTableReload = function () {
         tableLoader(true, $(this));
     };
 
+    /**
+     * Set default options
+     */
     $.jqSonTableOptions = function (customOptions) {
         if (customOptions) {
             $.extend(true, options, customOptions);
@@ -418,6 +487,9 @@
         return this;
     };
 
+    /**
+     * Initalize auto detect and run script
+     */
     $.jqSonInit = function () {
         tableLoader(true);
     }

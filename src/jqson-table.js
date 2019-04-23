@@ -2,10 +2,12 @@
     'use strict';
 
     var ajaxGetTable,
+        ajaxGetSelect,
         printError,
         jsonEqual,
         diffMinutes,
-        loadTable;
+        loadTable,
+        loadSelect;
 
     var timeOutMaxRetry = 10,
         timeOutCurrentRetry,
@@ -17,10 +19,12 @@
 
     var options = [];
 
+    var language = null;
+
     /**
-     * Default options
+     * Default table options
      */
-    var defaultOptions = {
+    var tableDefaultOptions = {
         ajax: {
             url: null,
             urlDelimeter: '&',
@@ -53,8 +57,27 @@
             numText: 'Num',
             actionsText: 'Actions'
         },
-        loader: '<div class="loader"><div></div><div></div><div></div><div></div></div>',
-        language: null
+        loader: '<div class="loader"><div></div><div></div><div></div><div></div></div>'
+    };
+
+    /**
+     * Default select options
+     */
+    var selectDefaultOptions = {
+        ajax: {
+            url: null,
+            urlDelimeter: '&',
+            timeOut: 30000,
+            preventReCreate: false,
+            async: false,
+            beforeSend: null,
+            successCallback: null,
+            errorCallback: null,
+            logError: true
+        },
+        selectedValue: null,
+        defaultOption: null,
+        optionItem: null
     };
 
     /**
@@ -83,8 +106,56 @@
                     options[id].ajax.successCallback(response);
                 }
 
-                _response = response.results;
-                window[id]['data'] = response.results;
+                _response = response;
+                window[id]['data'] = response;
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                if (options[id].ajax.logError) {
+                    printError(jqXHR, textStatus, errorThrown);
+                }
+
+                if (options[id].ajax.errorCallback) {
+                    options[id].ajax.errorCallback(jqXHR, textStatus, errorThrown);
+                }
+
+                if (textStatus == 'timeout' && timeOutMaxRetry < timeOutCurrentRetry) {
+                    ++timeOutCurrentRetry;
+                    return getTable();
+                }
+            }
+        });
+
+        return _response;
+    };
+
+    /**
+     * AJAX GET select data
+     * @param {*} jqXHR: jquery XHR error log
+     * @param {*} textStatus: error status
+     * @param {*} errorThrown: error thrown
+     */
+    ajaxGetSelect = function (id) {
+        var _response = null,
+            url = options[id].ajax.url;
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            timeOut: options[id].ajax.timeOut,
+            dataType: 'json',
+            async: options[id].ajax.async,
+            beforeSend: function (request) {
+                if (options[id].ajax.beforeSend) {
+                    options[id].ajax.beforeSend(request);
+                }
+            },
+            success: function (response) {
+                if (options[id].ajax.successCallback) {
+                    options[id].ajax.successCallback(response);
+                }
+
+                _response = response;
+                window[id]['data'] = response;
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 if (options[id].ajax.logError) {
@@ -225,7 +296,6 @@
             if ((last - page) > 10) {
                 pagination += '<button class="btn btn-default">...</button>';
             }
-            console.log(_page);
 
             pagination += '<button data-index="' + last + '" class="btn btn-default">' + last + '</button>';
         }
@@ -255,8 +325,8 @@
             thead = thead.replace('{{{text}}}', '<a href="#' + href + '">{{{text}}}</a>');
         }
 
-        if (options[id].language && options[id].language[text]) {
-            thead = thead.replace('{{{text}}}', options[id].language[text]);
+        if (language && language[text]) {
+            thead = thead.replace('{{{text}}}', language[text]);
         } else {
             thead = thead.replace('{{{text}}}', text.replace('_', ' '));
         }
@@ -298,7 +368,7 @@
         if (options[id].table.actions) {
             rowContent += '<td><div class="btn-group dropleft">' +
                 '<button type="button" class="btn btn-md btn-' + (options[id].table.actionColor ? options[id].table.actionColor : 'primary') + ' dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
-                (options[id].language && options[id].language.actions ? options[id].language.actions : options[id].table.actionsText) +
+                (language && language.actions ? language.actions : options[id].table.actionsText) +
                 '</button>' +
                 '<div class="dropdown-menu">';
 
@@ -309,7 +379,7 @@
                 } else {
                     rowContent +=
                     '<button data-action="' + _value.action + '" class="dropdown-item dropdown-item-blue" type="button"><i class="' + _value.icon + '"></i>' +
-                    (options[id].language ? options[id].language[_value.text] : _value.text) +
+                    (language ? language[_value.text] : _value.text) +
                     '</button>';
                 }
             });
@@ -330,9 +400,9 @@
         var table = '<thead><tr>';
 
         if (results && results[0]) {
-            if (options[id].table.numbers && options[id].language) {
-                table += '<th>' + options[id].language.num + '</th>';
-            } else if (options[id].table.numbers && !options[id].language) {
+            if (options[id].table.numbers && language) {
+                table += '<th>' + language.num + '</th>';
+            } else if (options[id].table.numbers && !language) {
                 table += '<th>' + options[id].table.numText + '</th>';
             }
 
@@ -353,9 +423,9 @@
                 }
             }
 
-            if (options[id].table.actions && options[id].language) {
-                table += '<th>' + options[id].language.actions + '</th>';
-            } else if (options[id].table.actions && !options[id].language) {
+            if (options[id].table.actions && language) {
+                table += '<th>' + language.actions + '</th>';
+            } else if (options[id].table.actions && !language) {
                 table += '<th>' + options[id].table.actionsText + '</th>';
             }
 
@@ -368,6 +438,31 @@
             }
         }
         return table + '</tbody>';
+    }
+
+    /**
+     * 
+     * @param {*} results 
+     * @param {*} id 
+     */
+    function optionBuilder(results, id) {
+        var optionsHtml = '';
+        
+        if (options[id].defaultOption){
+            optionsHtml += options[id].defaultOption;
+        }
+
+        if (results && options[id].optionItem){
+            if (typeof results[0] === 'object') {
+                for (var key in results) {
+                    var option = options[id].optionItem(key, results[key], options[id].selectedValue);
+
+                    optionsHtml += option;
+                }
+
+                return optionsHtml;
+            }
+        }
     }
 
     /**
@@ -425,7 +520,7 @@
                     table.html(options[id].loader);
 
                     // build the table with data
-                    var tableHtml = tableBuilder(response, id);
+                    var tableHtml = tableBuilder(response.results, id);
                     table.html(tableHtml);
                         
                     if (options[id].table.pagination){
@@ -438,12 +533,34 @@
                     // build the table with data
                     table.html(options[id].loader);
 
-                    var tableHtml = tableBuilder(response, id);
+                    var tableHtml = tableBuilder(response.results, id);
                     table.html(tableHtml);
 
                     var pagination =  getPagination(response.page, response.start, response.end, response.last);
                     table.next('.pagination').html(pagination);
                 }
+            } else {
+                console.log('There is no data.');
+            }
+        } else {
+            // ###
+        }
+    }
+
+    /**
+     * Load the select
+     * @param {*} select: target select element 
+     * @param {*} id: select id attribute
+     */
+    loadSelect = function (select, id) {
+        if (options[id].ajax) {
+            // get json data with ajax get request
+            var response = ajaxGetSelect(id);
+
+            if (response) {
+                // build the select with data
+                var optionHtml = optionBuilder(response.results, id);
+                select.html(optionHtml);
             } else {
                 console.log('There is no data.');
             }
@@ -462,10 +579,27 @@
             var id = _this.attr('id');
 
             if (customOptions) {
-                options[id] = $.extend(true, {}, defaultOptions, customOptions);
+                options[id] = $.extend(true, {}, tableDefaultOptions, customOptions);
             }
 
             tableLoader(true, _this, id);
+        }
+    };
+
+    /**
+     * JSON to select/option
+     */
+    $.fn.jqSonSelect = function (customOptions) {
+        var _this = $(this);
+
+        if (_this.length) {
+            var id = _this.attr('id');
+
+            if (customOptions) {
+                options[id] = $.extend(true, {}, selectDefaultOptions, customOptions);
+            }
+
+            loadSelect(_this, id);
         }
     };
 
@@ -481,16 +615,25 @@
      */
     $.jqSonTableOptions = function (customOptions) {
         if (customOptions) {
-            $.extend(true, options, customOptions);
+            $.extend(true, tableDefaultOptions, customOptions);
         }
 
         return this;
     };
 
     /**
+     * Set language
+     */
+    $.jqSonLoadLang = function (lang) {
+        if (lang) {
+            language = lang;
+        }
+    };
+
+    /**
      * Initalize auto detect and run script
      */
     $.jqSonInit = function () {
-        tableLoader(true);
+        tableLoader(true); // ###
     }
 })(jQuery);

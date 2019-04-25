@@ -7,6 +7,7 @@
         jsonEqual,
         diffMinutes,
         loadTable,
+        loadTableData,
         loadSelect;
 
     var timeOutMaxRetry = 10,
@@ -46,6 +47,7 @@
             like: ''
         },
         table: {
+            headerOrder: true,
             search: true,
             limit: true,
             pagination: true,
@@ -247,7 +249,7 @@
             }
         }
     }
-    
+
     /**
      * pagination builder
      * 
@@ -279,13 +281,13 @@
         }
 
         // middle pages
-        for (var i = 0; i < last-1; i++) {
-            var _page = start+i;
+        for (var i = 0; i < last - 1; i++) {
+            var _page = start + i;
 
             if (i <= 10) {
                 if (_page == page) {
                     pagination += '<button data-index="' + _page + '" class="btn btn-default active">' + _page + '</button>';
-                } else if (_page != last){
+                } else if (_page != last) {
                     pagination += '<button data-index="' + _page + '" class="btn btn-default"">' + _page + '</button>';
                 }
             }
@@ -321,7 +323,7 @@
     function setThead(href, text, id) {
         var thead = '<th>{{{text}}}</th>';
 
-        if (href) {
+        if (options[id].table.headerOrder && href) {
             thead = thead.replace('{{{text}}}', '<a href="#' + href + '">{{{text}}}</a>');
         }
 
@@ -353,7 +355,7 @@
 
         if (typeof value === 'object') {
             for (var key in value) {
-                if (options[id].table.except.indexOf(key) === -1 && typeof value[key] === 'string') {
+                if (options[id].table.except.indexOf(key) === -1) {
                     if (options[id].table.rowItem) {
                         var rowItem = options[id].table.rowItem(key, value);
 
@@ -373,14 +375,14 @@
                 '<div class="dropdown-menu">';
 
             options[id].table.actions.forEach(function (_value, _key) {
-                if (_value.actionItem){
+                if (_value.actionItem) {
                     var actionItem = _value.actionItem(key, value);
                     rowContent += actionItem;
                 } else {
                     rowContent +=
-                    '<button data-action="' + _value.action + '" class="dropdown-item dropdown-item-blue" type="button"><i class="' + _value.icon + '"></i>' +
-                    (language ? language[_value.text] : _value.text) +
-                    '</button>';
+                        '<button data-action="' + _value.action + '" class="dropdown-item dropdown-item-blue" type="button"><i class="' + _value.icon + '"></i>' +
+                        (language ? language[_value.text] : _value.text) +
+                        '</button>';
                 }
             });
 
@@ -408,7 +410,7 @@
 
             if (options[id].table.columns && options[id].table.columns.length) {
                 options[id].table.columns.forEach(function (value, key) {
-                    if (options[id].table.except.indexOf(value.text) === -1 && typeof value.text === 'string') {
+                    if (options[id].table.except.indexOf(value.text) === -1) {
                         table += setThead(value.href, value.text, id);
                     }
                 });
@@ -416,7 +418,7 @@
                 if (typeof results[0] === 'object') {
 
                     for (var key in results[0]) {
-                        if (options[id].table.except.indexOf(key) === -1 && typeof results[0][key] === 'string') {
+                        if (options[id].table.except.indexOf(key) === -1) {
                             table += setThead(key, key, id);
                         }
                     }
@@ -447,12 +449,12 @@
      */
     function optionBuilder(results, id) {
         var optionsHtml = '';
-        
-        if (options[id].defaultOption){
+
+        if (options[id].defaultOption) {
             optionsHtml += options[id].defaultOption;
         }
 
-        if (results && options[id].optionItem){
+        if (results && options[id].optionItem) {
             if (typeof results[0] === 'object') {
                 for (var key in results) {
                     var option = options[id].optionItem(key, results[key], options[id].selectedValue);
@@ -477,8 +479,8 @@
             table = _this.parents('.jqson-table'),
             id = table.attr('id');
 
-            options[id].pagination.order = options[id].pagination.order === 'desc' ? 'asc' : 'desc';
-            options[id].pagination.order_by = order_by;
+        options[id].pagination.order = options[id].pagination.order === 'desc' ? 'asc' : 'desc';
+        options[id].pagination.order_by = order_by;
 
         if (order === undefined || order == 'desc') {
             tableLoader(true, table, id);
@@ -522,10 +524,12 @@
                     // build the table with data
                     var tableHtml = tableBuilder(response.results, id);
                     table.html(tableHtml);
-                        
-                    if (options[id].table.pagination){
-                        var pagination =  getPagination(response.page, response.start, response.end, response.last);
-                        table.next('.pagination').html(pagination);    
+
+                    if (options[id].table.pagination) {
+                        if (options[id].table.pagination){
+                            var pagination = getPagination(response.page, response.start, response.end, response.last);
+                            table.next('.pagination').html(pagination);
+                        }
                     }
 
                     previousResponse = response;
@@ -536,14 +540,40 @@
                     var tableHtml = tableBuilder(response.results, id);
                     table.html(tableHtml);
 
-                    var pagination =  getPagination(response.page, response.start, response.end, response.last);
-                    table.next('.pagination').html(pagination);
+                    if (options[id].table.pagination){
+                        var pagination = getPagination(response.page, response.start, response.end, response.last);
+                        table.next('.pagination').html(pagination);
+                    }
                 }
             } else {
                 console.log('There is no data.');
             }
         } else {
             // ###
+        }
+    }
+
+    /**
+     * Load the table from source
+     * @param {*} data
+     * @param {*} table: target table element 
+     * @param {*} id: table id attribute
+     */
+    loadTableData = function (data, table, id) {
+        if (data) {
+            // build the table with data
+            table.html(options[id].loader);
+
+            var tableHtml = tableBuilder(data.results, id);
+            table.html(tableHtml);
+
+            if (options[id].table.pagination){
+                var pagination = getPagination(data.page, data.start, data.end, data.last);
+                table.next('.pagination').html(pagination);
+            }
+
+        } else {
+            console.log('There is no data.');
         }
     }
 
@@ -585,6 +615,24 @@
             tableLoader(true, _this, id);
         }
     };
+
+    /**
+     * Load table from source
+     */
+    $.fn.jqSonTableLoadData = function (data, customOptions) {
+        var _this = $(this);
+
+        if (_this.length) {
+            var id = _this.attr('id');
+
+            if (customOptions) {
+                options[id] = $.extend(true, {}, tableDefaultOptions, customOptions);
+            }
+
+            loadTableData(data, _this, id);
+        }
+    };
+
 
     /**
      * JSON to select/option

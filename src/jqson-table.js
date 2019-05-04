@@ -31,7 +31,6 @@
             urlDelimeter: '&',
             timeOut: 30000,
             reloadDelay: 10,
-            preventReCreate: false,
             async: false,
             beforeSend: null,
             successCallback: null,
@@ -43,7 +42,7 @@
             page: 1,
             limit: 25,
             order: 'desc',
-            order_by: 'date',
+            order_by: 'id',
             like: ''
         },
         table: {
@@ -58,8 +57,7 @@
             columns: [],
             numText: 'Num',
             actionsText: 'Actions'
-        },
-        loader: '<div class="loader"><div></div><div></div><div></div><div></div></div>'
+        }
     };
 
     /**
@@ -70,7 +68,6 @@
             url: null,
             urlDelimeter: '&',
             timeOut: 30000,
-            preventReCreate: false,
             async: false,
             beforeSend: null,
             successCallback: null,
@@ -258,59 +255,64 @@
      * @param {*} end:  end page list of pages
      * @param {*} last: last page
      */
-    function getPagination(page, start, end, last) {
-        if (last == 1) {
+    function getPagination(pagination) {
+        if (pagination.last == 1) {
             return '';
         }
 
-        var pagination = '';
+        var paginationHtml = '';
 
-        // left arrow: goes to previous page
-        if (page != 1) {
-            pagination = '<button data-index="' + (page - 1) + '" class="btn btn-default">&laquo;</button>';
+        // << previous page
+        if (pagination.page != 1) {
+            paginationHtml = '<button data-index="' + (pagination.page - 1) + '" class="btn btn-default">&laquo;</button>';
         } else {
-            pagination = '<button disabled data-index="' + start + '" class="btn btn-default"">&laquo;</button>';
-        }
-
-        // first page
-        if (start > 1) {
-            pagination += '<button data-index="1" class="btn btn-default">1</button>';
-            if (start > 6) {
-                pagination += '<button class="btn btn-default">...</button>';
-            }
-        }
-
-        // middle pages
-        for (var i = 0; i < last - 1; i++) {
-            var _page = start + i;
-
-            if (i <= 10) {
-                if (_page == page) {
-                    pagination += '<button data-index="' + _page + '" class="btn btn-default active">' + _page + '</button>';
-                } else if (_page != last) {
-                    pagination += '<button data-index="' + _page + '" class="btn btn-default"">' + _page + '</button>';
-                }
-            }
+            paginationHtml = '<button data-index="' + pagination.start + '" class="btn btn-default"" disabled>&laquo;</button>';
         }
 
         // last page or dot dot dot
-        if (end < last) {
-            if ((last - page) > 10) {
-                pagination += '<button class="btn btn-default">...</button>';
+        if (pagination.page > 1) {
+            if ((pagination.start - pagination.page) > 4) {
+                paginationHtml += '<button class="btn btn-default" disabled>...</button>';
             }
 
-            pagination += '<button data-index="' + last + '" class="btn btn-default">' + last + '</button>';
+            paginationHtml += '<button data-index="1" class="btn btn-default">1</button>';
         }
 
-        // right arrow: goes to next page
-        if (end != last) {
-            pagination += '<button data-index="' + (page + 1) + '" class="btn btn-default"">&raquo;</button>';
+
+        // left pages
+        if (pagination.left) {
+            pagination.left.forEach(el => {
+                paginationHtml += '<button data-index="' + el + '" class="btn btn-default">' + el + '</button>';
+            });
+        }
+
+        // current page
+        paginationHtml += '<button data-index="' + pagination.page + '" class="btn btn-default active">' + pagination.page + '</button>';
+
+        // right pages
+        if (pagination.right) {
+            pagination.right.forEach(el => {
+                paginationHtml += '<button data-index="' + el + '" class="btn btn-default">' + el + '</button>';
+            });
+        }
+
+        // last page or dot dot dot
+        if (pagination.end < pagination.last) {
+            if ((pagination.last - pagination.page) > 10) {
+                paginationHtml += '<button class="btn btn-default" disabled>...</button>';
+            }
+
+            paginationHtml += '<button data-index="' + pagination.last + '" class="btn btn-default">' + pagination.last + '</button>';
+        }
+
+        // >> next page
+        if (pagination.page != pagination.last) {
+            paginationHtml += '<button data-index="' + (pagination.page + 1) + '" class="btn btn-default"">&raquo;</button>';
         } else {
-            pagination += '<button data-index="' + page + '" class="btn btn-default active">' + page + '</button>';
-            pagination += '<button disabled data-index="' + last + '" class="btn btn-default">&raquo;</button>';
+            paginationHtml += '<button data-index="' + pagination.last + '" class="btn btn-default" disabled>&raquo;</button>';
         }
 
-        return pagination;
+        return paginationHtml;
     }
 
     /**
@@ -513,43 +515,33 @@
      * @param {*} id: table id attribute
      */
     loadTable = function (table, id) {
+        if (options[id].loader) {
+            $('.loader').show();
+        }
+
         if (options[id].ajax) {
             // get json data with ajax get request
             var response = ajaxGetTable(id);
 
             if (response) {
-                if (options[id].ajax.preventReCreate && !jsonEqual(previousResponse, response)) { // ###
-                    table.html(options[id].loader);
+                var tableHtml = tableBuilder(response.results, id);
+                    table.html(tableHtml),
+                    pagination = options[id].table.pagination;
 
-                    // build the table with data
-                    var tableHtml = tableBuilder(response.results, id);
-                    table.html(tableHtml);
-
-                    if (options[id].table.pagination) {
-                        if (options[id].table.pagination){
-                            var pagination = getPagination(response.page, response.start, response.end, response.last);
-                            table.next('.pagination').html(pagination);
-                        }
-                    }
-
-                    previousResponse = response;
-                } else if (!options[id].ajax.preventReCreate) {
-                    // build the table with data
-                    table.html(options[id].loader);
-
-                    var tableHtml = tableBuilder(response.results, id);
-                    table.html(tableHtml);
-
-                    if (options[id].table.pagination){
-                        var pagination = getPagination(response.page, response.start, response.end, response.last);
-                        table.next('.pagination').html(pagination);
-                    }
+                if (pagination && pagination === true) {
+                    var pagination = getPagination(response.pagination);
+                    table.next('.pagination').html(pagination);
+                    $('.loader').hide();
+                } else if (typeof pagination == 'function') {
+                    var pagination = pagination(response.pagination);
+                    table.next('.pagination').html(pagination);
+                    $('.loader').hide();
                 }
             } else {
                 console.log('There is no data.');
             }
         } else {
-            // ###
+            console.log('Missing AJAX');
         }
     }
 
@@ -567,9 +559,10 @@
             var tableHtml = tableBuilder(data.results, id);
             table.html(tableHtml);
 
-            if (options[id].table.pagination){
-                var pagination = getPagination(data.page, data.start, data.end, data.last);
+            if (options[id].table.pagination) {
+                var pagination = getPagination(data.pagination);
                 table.next('.pagination').html(pagination);
+                $('.loader').hide();
             }
 
         } else {

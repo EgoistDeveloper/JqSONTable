@@ -1,18 +1,12 @@
 (function ($) {
     'use strict';
 
-    var ajaxGetTable,
-        ajaxGetSelect,
-        printError,
-        jsonEqual,
-        diffMinutes,
-        loadTable,
-        loadTableData,
-        loadSelect;
+    /****************************************
+     *          Options
+     ****************************************/
 
     var timeOutMaxRetry = 10,
         timeOutCurrentRetry,
-        previousResponse = null,
         tableLastUpdate = new Date(),
         tableUpdateLoop = setInterval(function () {
             tableLoader();
@@ -50,13 +44,20 @@
             search: true,
             limit: true,
             pagination: true,
+            rowItem: null,
+            rowTr: null,
+            paginationHistory: true,
+            prefix: '',
             numbers: true,
             except: [],
             actions: null,
             actionColor: null,
             columns: [],
             numText: 'Num',
-            actionsText: 'Actions'
+            actionsText: 'Actions',
+            showingText: 'Showing #showing# of #total# items.',
+            showingNoneText: 'There is no reuslt',
+            tfoot: true
         }
     };
 
@@ -79,13 +80,37 @@
         optionItem: null
     };
 
+
+    /****************************************
+     *          Helper functions
+     ****************************************/
+
+    /**
+     * AJAX error printer
+     * @param {*} jqXHR: jquery XHR error log
+     * @param {*} textStatus: error status
+     * @param {*} errorThrown: error thrown
+     */
+    function printError(jqXHR, textStatus, errorThrown) {
+        console.log('--------------------------------------:');
+        console.log('------------- ERROR Start ------------:');
+        console.log('-------------jqXHR------------:');
+        console.log(jqXHR);
+        console.log('----------textStatus----------:');
+        console.log(textStatus);
+        console.log('----------errorThrown----------:');
+        console.log(errorThrown);
+        console.log('------------- ERROR End --------------:');
+        console.log('--------------------------------------:');
+    }
+
     /**
      * AJAX GET table data
      * @param {*} jqXHR: jquery XHR error log
      * @param {*} textStatus: error status
      * @param {*} errorThrown: error thrown
      */
-    ajaxGetTable = function (id) {
+    function ajaxGetTable(id) {
         var _response = null,
             url = options[id].ajax.url + options[id].ajax.urlDelimeter + $.param(options[id].pagination);
 
@@ -133,7 +158,7 @@
      * @param {*} textStatus: error status
      * @param {*} errorThrown: error thrown
      */
-    ajaxGetSelect = function (id) {
+    function ajaxGetSelect(id) {
         var _response = null,
             url = options[id].ajax.url;
 
@@ -176,48 +201,66 @@
     };
 
     /**
-     * AJAX error printer
-     * @param {*} jqXHR: jquery XHR error log
-     * @param {*} textStatus: error status
-     * @param {*} errorThrown: error thrown
-     */
-    printError = function (jqXHR, textStatus, errorThrown) {
-        console.log('--------------------------------------:');
-        console.log('------------- ERROR Start ------------:');
-        console.log('-------------jqXHR------------:');
-        console.log(jqXHR);
-        console.log('----------textStatus----------:');
-        console.log(textStatus);
-        console.log('----------errorThrown----------:');
-        console.log(errorThrown);
-        console.log('------------- ERROR End --------------:');
-        console.log('--------------------------------------:');
-    }
-
-    /**
-     * JSON compare
-     * @param {*} json1
-     * @param {*} json2
-     */
-    jsonEqual = function (json1, json2) {
-        if (json1 == null || json2 == null) {
-            return false;
-        }
-
-        return JSON.stringify(json1) === JSON.stringify(json2) ? true : false;
-    }
-
-    /**
      * Diff minutes function, require for table load dates
      * @param {*} date1: current time
      * @param {*} date2: past time
      */
-    diffMinutes = function (date1, date2) {
+    function diffMinutes(date1, date2) {
         var diff = (date2.getTime() - date1.getTime()) / 1000;
         diff /= 60;
 
         return Math.abs(Math.round(diff));
     }
+
+    /**
+     * Set cookie
+     * https://stackoverflow.com/a/1599291
+     * @param {string} name 
+     * @param {string} value 
+     * @param {int} days 
+     */
+    function setCookie(name, value, days) {
+        days = days === undefined ? 365 : days;
+
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            var expires = "; expires=" + date.toGMTString();
+        } else var expires = "";
+
+        document.cookie = name + "=" + value + expires + "; path=/";
+    }
+
+    /**
+     * Get cookie
+     * https://stackoverflow.com/a/1599291
+     * @param {string} name 
+     */
+    function getCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+        }
+
+        return null;
+    }
+
+    /**
+     * Remove cookie
+     * @see https://stackoverflow.com/a/1599291
+     * @param {string} name 
+     */
+    function eraseCookie(name) {
+        createCookie(name, '', -1);
+    }
+
+
+    /****************************************
+     *         Table Loader Section
+     ****************************************/
 
     /**
      * Universal table load and update controller
@@ -230,10 +273,10 @@
                 loadTable(table, id);
             }
         } else {
-            var _tables = $('table[id="jqson-table"]');
+            var tables = $('table');
 
-            if (_tables.length) {
-                _tables.forEach(function () {
+            if (tables.length > 0) {
+                tables.forEach(function () {
                     var _this = $(this),
                         id = _this.attr('id');
 
@@ -248,6 +291,117 @@
     }
 
     /**
+     * Load the table
+     * @param {*} table: target table element 
+     * @param {*} id: table id attribute
+     */
+    function loadTable(table, id) {
+        if (options[id].loader) {
+            $('.loader').show();
+        }
+
+        if (options[id].ajax) {
+            var response = ajaxGetTable(id);
+
+            if (response) {
+                var tableContent = tableBuilder(response.results, id),
+                    newTableHTML = '',
+                    pagination = options[id].table.pagination,
+                    paginationContent = '',
+                    resultsContent = response.pagination.page > 0 ? options[id].table.showingText.replace('#showing#', response.results.length).replace('#total#', response.total_results) : options[id].table.showingNoneText;
+
+                if (pagination && pagination === true) {
+                    paginationContent = buildPagination(response.pagination);
+                } else if (typeof pagination == 'function') {
+                    paginationContent = pagination(response.pagination);
+                }
+
+                if (table.parent().attr('id') == 'jqson-table') {
+                    table.html(tableContent);
+                    table.parent().find('#jqson-footer>#pagination').html(paginationContent);
+                    table.parent().find('#jqson-results').html(resultsContent);
+                } else {
+                    if (paginationContent) {
+                        newTableHTML.replace('#pagination#', paginationContent);
+                    }
+
+                    if (tableContent) {
+                        newTableHTML = '<div id="jqson-table" class="table-responsive jqson-container random-pagination">' +
+                            '<div id="jqson-header" class="justify-content-between">' +
+                            '<div class="float-right options"><button id="search-on-table" type="button" class="button" title="Search in Table"><i class="fa fa-search"></i></button>' +
+                            '<button id="refresh-table" type="button" class="button" title="Reload Table Contents"> <i class="fa fa-sync"></i> </button></div>' +
+                            '<div id="jqson-search" class="row m-0 d-none"><div class="col-lg-11"><input id="table-search" type="search" class="form-control rounded-input" placeholder="Search"></div><div class="col-lg-1"><button id="table-search-button" type="button" class="btn btn-primary btn-rounded">Search</button></div></div>' +
+                            '</div><br>' +
+                            table[0].outerHTML.replace('</table>', tableContent + '</table>') +
+                            '<div id="jqson-footer" class="row justify-content-between align-items-baseline" style="margin: 0px; padding: 0px 10px;"><div id="pagination" class="pagination">' +
+                            paginationContent +
+                            '</div><div id="jqson-results">' + (resultsContent) + '</div></div></div>';
+
+                        table.parent().html(newTableHTML);
+                    }
+                }
+
+                $('.loader').hide();
+            } else {
+                console.log('There is no data.');
+            }
+        } else {
+            console.log('Missing AJAX');
+        }
+    }
+
+    /**
+     * Load the table from source
+     * @param {*} data
+     * @param {*} table: target table element 
+     * @param {*} id: table id attribute
+     */
+    function loadTableData(data, table, id) {
+        if (data) {
+            var tableContent = tableBuilder(data.results, id),
+                newTableHTML = '',
+                pagination = options[id].table.pagination,
+                paginationContent = '',
+                resultsContent = data.pagination.page > 0 ? options[id].table.showingText.replace('#showing#', data.results.length).replace('#total#', data.total_results) : options[id].table.showingNoneText;
+
+            if (pagination && pagination === true) {
+                paginationContent = buildPagination(data.pagination);
+            } else if (typeof pagination == 'function') {
+                paginationContent = pagination(data.pagination);
+            }
+
+            if (table.parent().attr('id') == 'jqson-table') {
+                table.html(tableContent);
+                table.parent().find('#jqson-footer>#pagination').html(paginationContent);
+                table.parent().find('#jqson-results').html(resultsContent);
+            } else {
+                if (paginationContent) {
+                    newTableHTML.replace('#pagination#', paginationContent);
+                }
+
+                if (tableContent) {
+                    newTableHTML = '<div id="jqson-table" class="table-responsive jqson-container random-pagination">' +
+                        '<div id="jqson-header" class="justify-content-between">' +
+                        '<div class="float-right options"><button id="search-on-table" type="button" class="button" title="Search in Table"><i class="fa fa-search"></i></button>' +
+                        '<button id="refresh-table" type="button" class="button" title="Reload Table Contents"> <i class="fa fa-sync"></i> </button></div>' +
+                        '<div id="jqson-search" class="row m-0 d-none"><div class="col-lg-11"><input id="table-search" type="search" class="form-control rounded-input" placeholder="Search"></div><div class="col-lg-1"><button id="table-search-button" type="button" class="btn btn-primary btn-rounded">Search</button></div></div>' +
+                        '</div><br>' +
+                        table[0].outerHTML.replace('</table>', tableContent + '</table>') +
+                        '<div id="jqson-footer" class="row justify-content-between align-items-baseline" style="margin: 0px; padding: 0px 10px;"><div id="pagination" class="pagination">' +
+                        paginationContent +
+                        '</div><div id="jqson-results">' + (resultsContent) + '</div></div></div>';
+
+                    table.parent().html(newTableHTML);
+                }
+            }
+
+            $('.loader').hide();
+        } else {
+            console.log('There is no data.');
+        }
+    }
+
+    /**
      * pagination builder
      * 
      * @param {*} page: current page
@@ -255,8 +409,8 @@
      * @param {*} end:  end page list of pages
      * @param {*} last: last page
      */
-    function getPagination(pagination) {
-        if (pagination.last == 1) {
+    function buildPagination(pagination) {
+        if (pagination.last == 0 || pagination.last == 1) {
             return '';
         }
 
@@ -269,13 +423,11 @@
             paginationHtml = '<button data-index="' + pagination.start + '" class="btn btn-default"" disabled>&laquo;</button>';
         }
 
-        // last page or dot dot dot
-        if (pagination.page > 1) {
-            if ((pagination.start - pagination.page) > 4) {
-                paginationHtml += '<button class="btn btn-default" disabled>...</button>';
-            }
-
+        // first page and dot dot dot
+        if (pagination.page > 7) {
             paginationHtml += '<button data-index="1" class="btn btn-default">1</button>';
+
+            paginationHtml += '<button class="btn btn-default" disabled>•••</button>';
         }
 
 
@@ -299,20 +451,85 @@
         // last page or dot dot dot
         if (pagination.end < pagination.last) {
             if ((pagination.last - pagination.page) > 10) {
-                paginationHtml += '<button class="btn btn-default" disabled>...</button>';
+                paginationHtml += '<button class="btn btn-default" disabled>•••</button>';
             }
 
             paginationHtml += '<button data-index="' + pagination.last + '" class="btn btn-default">' + pagination.last + '</button>';
         }
 
         // >> next page
-        if (pagination.page != pagination.last) {
+        if (pagination.page != pagination.end) {
             paginationHtml += '<button data-index="' + (pagination.page + 1) + '" class="btn btn-default"">&raquo;</button>';
         } else {
-            paginationHtml += '<button data-index="' + pagination.last + '" class="btn btn-default" disabled>&raquo;</button>';
+            paginationHtml += '<button data-index="' + pagination.end + '" class="btn btn-default" disabled>&raquo;</button>';
         }
 
         return paginationHtml;
+    }
+
+    /**
+     * 
+     * @param {*} results 
+     * @param {*} id 
+     */
+    function tableBuilder(results, id) {
+        var thead = '',
+            tbody = '',
+            tfoot = '';
+
+        if (results && results[0]) {
+            // thead
+            thead = '<thead><tr>'
+
+            if (options[id].table.numbers && language) {
+                thead += '<th>' + language.num + '</th>';
+            } else if (options[id].table.numbers && !language) {
+                thead += '<th>' + options[id].table.numText + '</th>';
+            }
+
+            if (options[id].table.columns && options[id].table.columns.length) {
+                options[id].table.columns.forEach(function (value, key) {
+                    if (options[id].table.except.indexOf(value.text) === -1) {
+                        thead += setThead(value.href, value.text, id);
+                    }
+                });
+            } else {
+                if (typeof results[0] === 'object') {
+
+                    for (var key in results[0]) {
+                        if (options[id].table.except.indexOf(key) === -1) {
+                            thead += setThead(key, key, id);
+                        }
+                    }
+                }
+            }
+
+            if (options[id].table.actions && language) {
+                thead += '<th>' + language.actions + '</th>';
+            } else if (options[id].table.actions && !language) {
+                thead += '<th>' + options[id].table.actionsText + '</th>';
+            }
+
+            thead += '</tr></thead>';
+
+            // tbody
+            if (typeof results === 'object') {
+                tbody = '<tbody>';
+
+                for (var key in results) {
+                    tbody += setTableRow(key, results[key], id);
+                }
+
+                tbody += '</tbody>';
+            }
+
+            // tfoot
+            if (options[id].table.tfoot) {
+                tfoot = thead.replace('thead', 'tfoot');
+            }
+        }
+
+        return thead + tbody + tfoot;
     }
 
     /**
@@ -346,7 +563,8 @@
      * @param {*} id: table id
      */
     function setTableRow(key, value, id) {
-        var trow = '<tr' + (value.id ? ' data-id="' + value.id + '"' : '') + '>{{{row}}}</tr>',
+        var tr = options[id].table.rowTr ? options[id].table.rowTr(key, value) : (value.id ? 'data-id="' + value.id + '"' : ''),
+            trow = '<tr ' + tr + '>{{{row}}}</tr>',
             rowContent = '';
 
         if (options[id].table.numbers) {
@@ -396,53 +614,120 @@
     }
 
     /**
-     * 
-     * @param {*} results 
-     * @param {*} id 
+     * Table column order action
      */
-    function tableBuilder(results, id) {
-        var table = '<thead><tr>';
+    $(document).on('click', '.jqson-table thead th a, .jqson-table tfoot th a', function (e) {
+        e.preventDefault();
 
-        if (results && results[0]) {
-            if (options[id].table.numbers && language) {
-                table += '<th>' + language.num + '</th>';
-            } else if (options[id].table.numbers && !language) {
-                table += '<th>' + options[id].table.numText + '</th>';
-            }
+        var _this = $(this),
+            order_by = _this.attr('href').replace('#', ''),
+            order = _this.attr('data-order'),
+            table = _this.parents('.jqson-table'),
+            id = table.attr('id');
 
-            if (options[id].table.columns && options[id].table.columns.length) {
-                options[id].table.columns.forEach(function (value, key) {
-                    if (options[id].table.except.indexOf(value.text) === -1) {
-                        table += setThead(value.href, value.text, id);
-                    }
-                });
-            } else {
-                if (typeof results[0] === 'object') {
+        options[id].pagination.order = options[id].pagination.order === 'desc' ? 'asc' : 'desc';
+        options[id].pagination.order_by = order_by;
 
-                    for (var key in results[0]) {
-                        if (options[id].table.except.indexOf(key) === -1) {
-                            table += setThead(key, key, id);
-                        }
-                    }
-                }
-            }
+        if (order === undefined || order == 'desc') {
+            tableLoader(true, table, id);
 
-            if (options[id].table.actions && language) {
-                table += '<th>' + language.actions + '</th>';
-            } else if (options[id].table.actions && !language) {
-                table += '<th>' + options[id].table.actionsText + '</th>';
-            }
+            var item = $('a[href="#' + order_by + '"]');
+            item.attr('data-order', 'asc').html(item[0].innerText + ' <i class="fas fa-angle-double-up"></i>');
+        } else if (order == 'asc') {
+            tableLoader(true, table, id);
 
-            table += '</tr></thead><tbody>'
-
-            if (typeof results === 'object') {
-                for (var key in results) {
-                    table += setTableRow(key, results[key], id);
-                }
-            }
+            var item = $('a[href="#' + order_by + '"]');
+            item.attr('data-order', 'desc').html(item[0].innerText + ' <i class="fas fa-angle-double-down"></i>');
         }
-        return table + '</tbody>';
+    });
+
+    /**
+     * Table pagination action
+     */
+    $(document).on('click', '#pagination button', function () {
+        var _this = $(this),
+            table = _this.parents('#jqson-table').find('.jqson-table'),
+            id = table.attr('id'),
+            index = _this.attr('data-index');
+
+        options[id].pagination.page = index;
+        tableLoader(true, table, id);
+
+        if (options[id].table.paginationHistory) {
+            setCookie(options[id].table.prefix + id + '_pagination', JSON.stringify(options[id].pagination), 365);
+        }
+    });
+
+    /**
+     * Open search bar
+     */
+    $(document).on('click', '#search-on-table', function () {
+        var searchBar = $('#jqson-search');
+
+        console.log(searchBar);
+        if (searchBar.hasClass('d-none')) {
+            searchBar.removeClass('d-none');
+        } else {
+            searchBar.addClass('d-none');
+        }
+    });
+
+    /**
+     * Search on table
+     */
+    function searchOnTable(_this) {
+        var table = $(_this).parents('#jqson-table').find('table'),
+            id = table.attr('id'),
+            searchTerm = $('#table-search').val() ? $('#table-search').val() : '';
+
+        if (id) {
+            options[id].pagination.like = searchTerm;
+
+            loadTable(table, id);
+
+            options[id].pagination.like = '';
+            setCookie(options[id].table.prefix + id + '_pagination', JSON.stringify(options[id].pagination), 365);
+        }
     }
+
+    /**
+     * Search on table with button click action
+     */
+    $(document).on('click', '#table-search-button', function () {
+        searchOnTable(this);
+    });
+
+    /**
+     * Search on table when focus lost
+     */
+    $(document).on('blur', '#table-search', function (e) {
+        searchOnTable(this);
+    });
+
+    /**
+     * Search on table when focus lost
+     */
+    $(document).on('search', '#table-search', function (e) {
+        searchOnTable(this);
+    });
+
+    /**
+     * Refresh table
+     */
+    $(document).on('click', '#refresh-table', function () {
+        var table = $(this).parents('#jqson-table').find('table'),
+            id = table.attr('id');
+
+        options[id].pagination.like = '';
+        options[id].pagination.page = 1;
+
+        loadTable(table, id);
+    });
+
+
+    /****************************************
+     *        Option Loader Section
+     ****************************************/
 
     /**
      * 
@@ -470,112 +755,11 @@
     }
 
     /**
-     * Table column order action
-     */
-    $(document).on('click', '.jqson-table thead th a', function (e) {
-        e.preventDefault();
-
-        var _this = $(this),
-            order_by = _this.attr('href').replace('#', ''),
-            order = _this.attr('data-order'),
-            table = _this.parents('.jqson-table'),
-            id = table.attr('id');
-
-        options[id].pagination.order = options[id].pagination.order === 'desc' ? 'asc' : 'desc';
-        options[id].pagination.order_by = order_by;
-
-        if (order === undefined || order == 'desc') {
-            tableLoader(true, table, id);
-
-            var head = $('a[href="#' + order_by + '"]');
-            head.attr('data-order', 'asc').html(head.text() + ' <i class="fas fa-angle-double-up"></i>');
-        } else if (order == 'asc') {
-            tableLoader(true, table, id);
-
-            var head = $('a[href="#' + order_by + '"]');
-            head.attr('data-order', 'desc').html(head.text() + ' <i class="fas fa-angle-double-down"></i>');
-        }
-    });
-
-    /**
-     * Table pagination action
-     */
-    $(document).on('click', '#pagination button', function () {
-        var _this = $(this),
-            table = _this.parents('#jqson-table').find('.jqson-table'),
-            id = table.attr('id');
-
-        options[id].pagination.page = _this.attr('data-index');
-        tableLoader(true, table, id);
-    });
-
-    /**
-     * Load the table
-     * @param {*} table: target table element 
-     * @param {*} id: table id attribute
-     */
-    loadTable = function (table, id) {
-        if (options[id].loader) {
-            $('.loader').show();
-        }
-
-        if (options[id].ajax) {
-            // get json data with ajax get request
-            var response = ajaxGetTable(id);
-
-            if (response) {
-                var tableHtml = tableBuilder(response.results, id);
-                    table.html(tableHtml),
-                    pagination = options[id].table.pagination;
-
-                if (pagination && pagination === true) {
-                    var pagination = getPagination(response.pagination);
-                    table.next('.pagination').html(pagination);
-                    $('.loader').hide();
-                } else if (typeof pagination == 'function') {
-                    var pagination = pagination(response.pagination);
-                    table.next('.pagination').html(pagination);
-                    $('.loader').hide();
-                }
-            } else {
-                console.log('There is no data.');
-            }
-        } else {
-            console.log('Missing AJAX');
-        }
-    }
-
-    /**
-     * Load the table from source
-     * @param {*} data
-     * @param {*} table: target table element 
-     * @param {*} id: table id attribute
-     */
-    loadTableData = function (data, table, id) {
-        if (data) {
-            // build the table with data
-            table.html(options[id].loader);
-
-            var tableHtml = tableBuilder(data.results, id);
-            table.html(tableHtml);
-
-            if (options[id].table.pagination) {
-                var pagination = getPagination(data.pagination);
-                table.next('.pagination').html(pagination);
-                $('.loader').hide();
-            }
-
-        } else {
-            console.log('There is no data.');
-        }
-    }
-
-    /**
      * Load the select
      * @param {*} select: target select element 
      * @param {*} id: select id attribute
      */
-    loadSelect = function (select, id) {
+    function loadSelect(select, id) {
         if (options[id].ajax) {
             // get json data with ajax get request
             var response = ajaxGetSelect(id);
@@ -592,6 +776,11 @@
         }
     }
 
+
+    /****************************************
+     *          Extension Methods
+     ****************************************/
+
     /**
      * JSON to table
      */
@@ -599,10 +788,23 @@
         var _this = $(this);
 
         if (_this.length) {
-            var id = _this.attr('id');
+            var id = _this.attr('id'),
+                prefix = _this.attr('data-table-prefix');
 
             if (customOptions) {
                 options[id] = $.extend(true, {}, tableDefaultOptions, customOptions);
+            }
+
+            if (!options[id].table.prefix.length && prefix) {
+                options[id].table.prefix = prefix;
+            }
+
+            if (options[id].table.paginationHistory && prefix) {
+                var paginationHistory = getCookie(prefix + id + '_pagination');
+
+                if (paginationHistory) {
+                    options[id].pagination = JSON.parse(paginationHistory);
+                }
             }
 
             tableLoader(true, _this, id);
@@ -616,16 +818,28 @@
         var _this = $(this);
 
         if (_this.length) {
-            var id = _this.attr('id');
+            var id = _this.attr('id'),
+                prefix = _this.attr('data-table-prefix');
 
             if (customOptions) {
                 options[id] = $.extend(true, {}, tableDefaultOptions, customOptions);
             }
 
+            if (!options[id].table.prefix.length && prefix) {
+                options[id].table.prefix = prefix;
+            }
+
+            if (options[id].table.paginationHistory && prefix) {
+                var paginationHistory = getCookie(prefix + id + '_pagination');
+
+                if (paginationHistory) {
+                    options[id].pagination = JSON.parse(paginationHistory);
+                }
+            }
+
             loadTableData(data, _this, id);
         }
     };
-
 
     /**
      * JSON to select/option
@@ -675,6 +889,6 @@
      * Initalize auto detect and run script
      */
     $.jqSonInit = function () {
-        tableLoader(true); // ###
+        tableLoader(true);
     }
 })(jQuery);

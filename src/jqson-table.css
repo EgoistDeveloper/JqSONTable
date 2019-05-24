@@ -1,0 +1,31 @@
+#jqson-header {
+    padding: 10px;
+    position: relative;
+}
+
+#jqson-header .options{
+    margin-top: 7px;
+    padding-left: 10px;
+}
+
+#jqson-header .options button{
+    background-color: transparent;
+    border: none;
+    font-size: 90%;
+}
+
+#jqson-search{
+    border-right: 1px solid #dddddd;
+}
+
+#jqson-search input {
+    text-align: center;
+}
+
+.jqson-container table{
+    margin-top: 15px;
+}
+
+.jqson-container .pagination button:focus {
+    outline: 0 !important;
+}

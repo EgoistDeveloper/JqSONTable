@@ -1,3 +1,6 @@
+v0.0.6 - 25.05.2019
++ Removed dunused fields
+
 v0.0.5 - 24.05.2019
 
 + Fixed some logical issues

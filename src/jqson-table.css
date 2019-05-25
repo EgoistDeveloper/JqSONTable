@@ -29,3 +29,7 @@
 .jqson-container .pagination button:focus {
     outline: 0 !important;
 }
+
+.jqson-container table th {
+    text-transform: capitalize !important;
+}

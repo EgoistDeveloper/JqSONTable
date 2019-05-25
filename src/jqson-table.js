@@ -22,16 +22,16 @@
     var tableDefaultOptions = {
         ajax: {
             url: null,
-            urlDelimeter: '&',
+            urlDelimeter: '?',
             timeOut: 30000,
             reloadDelay: 10,
             async: false,
             beforeSend: null,
-            successCallback: null,
-            errorCallback: null,
+            afterSend: null,
+            success: null,
+            error: null,
             logError: true
         },
-        results: null,
         pagination: {
             page: 1,
             limit: 25,
@@ -51,7 +51,7 @@
             numbers: true,
             except: [],
             actions: null,
-            actionColor: null,
+            actionColor: 'primary',
             columns: [],
             numText: 'Num',
             actionsText: 'Actions',
@@ -67,12 +67,13 @@
     var selectDefaultOptions = {
         ajax: {
             url: null,
-            urlDelimeter: '&',
+            urlDelimeter: '?',
             timeOut: 30000,
             async: false,
             beforeSend: null,
-            successCallback: null,
-            errorCallback: null,
+            afterSend: null,
+            success: null,
+            error: null,
             logError: true
         },
         selectedValue: null,
@@ -126,8 +127,8 @@
                 }
             },
             success: function (response) {
-                if (options[id].ajax.successCallback) {
-                    options[id].ajax.successCallback(response);
+                if (options[id].ajax.success) {
+                    options[id].ajax.success(response);
                 }
 
                 _response = response;
@@ -138,14 +139,18 @@
                     printError(jqXHR, textStatus, errorThrown);
                 }
 
-                if (options[id].ajax.errorCallback) {
-                    options[id].ajax.errorCallback(jqXHR, textStatus, errorThrown);
+                if (options[id].ajax.error) {
+                    options[id].ajax.error(jqXHR, textStatus, errorThrown);
                 }
 
                 if (textStatus == 'timeout' && timeOutMaxRetry < timeOutCurrentRetry) {
                     ++timeOutCurrentRetry;
                     return getTable();
                 }
+            }
+        }).done(function(){
+            if (options[id].ajax.afterSend && typeof options[id].ajax.afterSend == 'function'){
+                options[id].ajax.afterSend();
             }
         });
 
@@ -174,8 +179,8 @@
                 }
             },
             success: function (response) {
-                if (options[id].ajax.successCallback) {
-                    options[id].ajax.successCallback(response);
+                if (options[id].ajax.success) {
+                    options[id].ajax.success(response);
                 }
 
                 _response = response;
@@ -186,8 +191,8 @@
                     printError(jqXHR, textStatus, errorThrown);
                 }
 
-                if (options[id].ajax.errorCallback) {
-                    options[id].ajax.errorCallback(jqXHR, textStatus, errorThrown);
+                if (options[id].ajax.error) {
+                    options[id].ajax.error(jqXHR, textStatus, errorThrown);
                 }
 
                 if (textStatus == 'timeout' && timeOutMaxRetry < timeOutCurrentRetry) {
@@ -589,7 +594,7 @@
 
         if (options[id].table.actions) {
             rowContent += '<td><div class="btn-group dropleft">' +
-                '<button type="button" class="btn btn-md btn-' + (options[id].table.actionColor ? options[id].table.actionColor : 'primary') + ' dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
+                '<button type="button" class="btn btn-md btn-' + options[id].table.actionColor + ' dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
                 (language && language.actions ? language.actions : options[id].table.actionsText) +
                 '</button>' +
                 '<div class="dropdown-menu">';

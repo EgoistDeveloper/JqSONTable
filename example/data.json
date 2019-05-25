@@ -1,0 +1,48 @@
+{
+    "pagination": {
+        "left": [],
+        "right": [2, 3, 4, 5],
+        "page": 1,
+        "start": 1,
+        "end": 5,
+        "last": 4
+    },
+    "total_results": 117,
+    "results": [{
+        "id": "1",
+        "username": "Egoist",
+        "full_name": "Yıldıray Eyüp Erdoğan",
+        "profile_image": "https://picsum.photos/400",
+        "age": "21",
+        "some_field": "Some Content",
+        "register_date": "12-12-2012 12:12:12",
+        "last_login": "13:13:2013 13:13:13"
+    },{
+        "id": "1",
+        "username": "Egoist 2",
+        "full_name": "Yıldıray Eyüp Erdoğan",
+        "profile_image": "https://picsum.photos/400",
+        "age": "21",
+        "some_field": "Some Content",
+        "register_date": "12-12-2012 12:12:12",
+        "last_login": "13:13:2013 13:13:13"
+    },{
+        "id": "1",
+        "username": "Egoist 3",
+        "full_name": "Yıldıray Eyüp Erdoğan",
+        "profile_image": "https://picsum.photos/400",
+        "age": "21",
+        "some_field": "Some Content",
+        "register_date": "12-12-2012 12:12:12",
+        "last_login": "13:13:2013 13:13:13"
+    },{
+        "id": "1",
+        "username": "Egoist 4",
+        "full_name": "Yıldıray Eyüp Erdoğan",
+        "profile_image": "https://picsum.photos/400",
+        "age": "21",
+        "some_field": "Some Content",
+        "register_date": "12-12-2012 12:12:12",
+        "last_login": "13:13:2013 13:13:13"
+    }]
+}

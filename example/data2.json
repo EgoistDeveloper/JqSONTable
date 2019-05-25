@@ -1,0 +1,48 @@
+{
+    "pagination": {
+        "left": [],
+        "right": [2, 3, 4, 5],
+        "pcountry": 1,
+        "start": 1,
+        "end": 5,
+        "last": 4
+    },
+    "total_results": 117,
+    "results": [{
+        "id": "1",
+        "username": "Testa",
+        "gender": "Male",
+        "full_name": "Yıldıray Eyüp Erdoğan",
+        "profile_image": "https://picsum.photos/500",
+        "country": "TR - Turkey",
+        "city": "Istanbul",
+        "date": "01-02-2003 01:02:03"
+    },{
+        "id": "1",
+        "username": "Testa 2",
+        "gender": "Male",
+        "full_name": "Yıldıray Eyüp Erdoğan",
+        "profile_image": "https://picsum.photos/500",
+        "country": "TR - Turkey",
+        "city": "Istanbul",
+        "date": "01-02-2003 01:02:03"
+    },{
+        "id": "1",
+        "username": "Testa 3",
+        "gender": "Male",
+        "full_name": "Yıldıray Eyüp Erdoğan",
+        "profile_image": "https://picsum.photos/500",
+        "country": "TR - Turkey",
+        "city": "Istanbul",
+        "date": "01-02-2003 01:02:03"
+    },{
+        "id": "1",
+        "username": "Testa 4",
+        "gender": "Male",
+        "full_name": "Yıldıray Eyüp Erdoğan",
+        "profile_image": "https://picsum.photos/500",
+        "country": "TR - Turkey",
+        "city": "Istanbul",
+        "date": "01-02-2003 01:02:03"
+    }]
+}

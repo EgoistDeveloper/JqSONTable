@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>JqSON Table Examples 2</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+    <link rel="stylesheet" href="./../src/jqson-table.css">
+    <style>
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row p-3">
+            <div class="col-6"><select id="myselect"></select></div>
+            <div class="col-6"><select id="myselect-2"></select></div>
+        </div>
+        <hr>
+
+        <div class="row p-3">
+            <div class="col-4">
+                <div class="row">
+                    <h3>Default Listing</h3>
+                </div>
+                <div class="row">
+                    <ul id="mylist" class="list-group"></ul>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="row">
+                    <h3>Link Listing</h3>
+                </div>
+                <div class="row">
+                    <div id="mylist-2" class="list-group"></div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="row">
+                    <h3>Button Listing</h3>
+                </div>
+                <div class="row">
+                    <div id="mylist-3" class="list-group"></div>
+                </div>
+            </div>
+        </div>
+        <hr>
+        
+        <div class="row p-3">
+            <div class="col-4">
+                <div class="row">
+                    <h3>Default Listing - Active</h3>
+                </div>
+                <div class="row">
+                    <ul id="mylist-4" class="list-group"></ul>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="row">
+                    <h3>Link Listing - Active</h3>
+                </div>
+                <div class="row">
+                    <div id="mylist-5" class="list-group"></div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="row">
+                    <h3>Button Listing - Active</h3>
+                </div>
+                <div class="row">
+                    <div id="mylist-6" class="list-group"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<footer>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <script src="./../src/jqson-table.js"></script>
+
+    <script>
+        $('#myselect').jqSonSelect({
+            ajax: {
+                url: './data.json',
+                afterSend: function(){
+                    $('#myselect-2').jqSonSelect({
+                        ajax: {
+                            url: './data2.json',
+                        },
+                        defaultOption: '<option>Select an Item</option>',
+                        optionItem: function (key, value, selectedValue) {
+                            if (value.id == selectedValue) {
+                                return '<option value="' + value.id + '" selected>' + value.username + '</option>';
+                            } else {
+                                return '<option value="' + value.id + '">' + value.username + '</option>';
+                            }
+                        }
+                    });
+                }
+            },
+            defaultOption: '<option>Select an Item</option>'
+        });
+
+        $('#mylist').jqSonList({
+            ajax: {
+                url: './data.json'
+            }
+        });
+
+        $('#mylist-2').jqSonList({
+            ajax: {
+                url: './data.json'
+            },
+            itemType: 'a'
+        });
+
+        $('#mylist-3').jqSonList({
+            ajax: {
+                url: './data.json'
+            },
+            itemType: 'button'
+        });
+
+        // active examples
+                
+        $('#mylist-4').jqSonList({
+            ajax: {
+                url: './data.json'
+            },
+            itemType: 'button',
+            listItem: function(key, value){
+                var _value = Object.keys(value);
+
+                if (value[_value[1]] == 'Egoist 2'){
+                    return '<a class="list-group-item list-group-item-action active" href="'+value[_value[0]]+'">'+value[_value[1]]+'</a>';
+                } else {
+                    return '<a class="list-group-item list-group-item-action" href="'+value[_value[0]]+'">'+value[_value[1]]+'</a>';
+                }
+            }
+        });
+                
+        $('#mylist-5').jqSonList({
+            ajax: {
+                url: './data.json'
+            },
+            itemType: 'button',
+            listItem: function(key, value){
+                var _value = Object.keys(value);
+
+                if (value[_value[1]] == 'Egoist 3'){
+                    return '<button class="list-group-item list-group-item-action active" href="'+value[_value[0]]+'">'+value[_value[1]]+'</button>';
+                } else {
+                    return '<button class="list-group-item list-group-item-action" href="'+value[_value[0]]+'">'+value[_value[1]]+'</button>';
+                }
+            }
+        });
+
+        $('#mylist-6').jqSonList({
+            ajax: {
+                url: './data.json'
+            },
+            itemType: 'button',
+            listItem: function(key, value){
+                var _value = Object.keys(value);
+
+                if (value[_value[1]] == 'Egoist 4'){
+                    return '<button type="button" class="list-group-item active" data-value="'+value[_value[0]]+'">'+value[_value[1]]+'</button>';
+                } else {
+                    return '<button type="button" class="list-group-item" data-value="'+value[_value[0]]+'">'+value[_value[1]]+'</button>';
+                }
+            }
+        });
+
+        $(document).on('click', '#btn-refresh', function(){
+
+        });
+    </script>
+</footer>
+
+</html>

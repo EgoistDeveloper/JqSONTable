@@ -22,16 +22,16 @@
     var tableDefaultOptions = {
         ajax: {
             url: null,
-            urlDelimeter: '&',
+            urlDelimeter: '?',
             timeOut: 30000,
             reloadDelay: 10,
             async: false,
             beforeSend: null,
-            successCallback: null,
-            errorCallback: null,
+            afterSend: null,
+            success: null,
+            error: null,
             logError: true
         },
-        results: null,
         pagination: {
             page: 1,
             limit: 25,
@@ -51,7 +51,7 @@
             numbers: true,
             except: [],
             actions: null,
-            actionColor: null,
+            actionColor: 'primary',
             columns: [],
             numText: 'Num',
             actionsText: 'Actions',
@@ -67,17 +67,46 @@
     var selectDefaultOptions = {
         ajax: {
             url: null,
-            urlDelimeter: '&',
+            urlDelimeter: '?',
+<<<<<<< HEAD
+            params: null,
+=======
+>>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
             timeOut: 30000,
             async: false,
             beforeSend: null,
-            successCallback: null,
-            errorCallback: null,
+            afterSend: null,
+            success: null,
+            error: null,
             logError: true
         },
+        results: null,
         selectedValue: null,
         defaultOption: null,
         optionItem: null
+    };
+
+    /**
+     * Default list options
+     */
+    var listDefaultOptions = {
+        ajax: {
+            url: null,
+            urlDelimeter: '?',
+            params: null,
+            timeOut: 30000,
+            async: false,
+            beforeSend: null,
+            afterSend: null,
+            success: null,
+            error: null,
+            logError: true
+        },
+        itemType: 'li',
+        results: null,
+        selectedKey: null,
+        selectedValue: null,
+        listItem: null
     };
 
 
@@ -126,8 +155,8 @@
                 }
             },
             success: function (response) {
-                if (options[id].ajax.successCallback) {
-                    options[id].ajax.successCallback(response);
+                if (options[id].ajax.success) {
+                    options[id].ajax.success(response);
                 }
 
                 _response = response;
@@ -138,14 +167,18 @@
                     printError(jqXHR, textStatus, errorThrown);
                 }
 
-                if (options[id].ajax.errorCallback) {
-                    options[id].ajax.errorCallback(jqXHR, textStatus, errorThrown);
+                if (options[id].ajax.error) {
+                    options[id].ajax.error(jqXHR, textStatus, errorThrown);
                 }
 
                 if (textStatus == 'timeout' && timeOutMaxRetry < timeOutCurrentRetry) {
                     ++timeOutCurrentRetry;
                     return getTable();
                 }
+            }
+        }).done(function(){
+            if (options[id].ajax.afterSend && typeof options[id].ajax.afterSend == 'function'){
+                options[id].ajax.afterSend();
             }
         });
 
@@ -158,7 +191,7 @@
      * @param {*} textStatus: error status
      * @param {*} errorThrown: error thrown
      */
-    function ajaxGetSelect(id) {
+    function ajaxGetData(id) {
         var _response = null,
             url = options[id].ajax.url;
 
@@ -174,8 +207,8 @@
                 }
             },
             success: function (response) {
-                if (options[id].ajax.successCallback) {
-                    options[id].ajax.successCallback(response);
+                if (options[id].ajax.success) {
+                    options[id].ajax.success(response);
                 }
 
                 _response = response;
@@ -186,14 +219,18 @@
                     printError(jqXHR, textStatus, errorThrown);
                 }
 
-                if (options[id].ajax.errorCallback) {
-                    options[id].ajax.errorCallback(jqXHR, textStatus, errorThrown);
+                if (options[id].ajax.error) {
+                    options[id].ajax.error(jqXHR, textStatus, errorThrown);
                 }
 
                 if (textStatus == 'timeout' && timeOutMaxRetry < timeOutCurrentRetry) {
                     ++timeOutCurrentRetry;
                     return getTable();
                 }
+            }
+        }).done(function(){
+            if (options[id].ajax.afterSend && typeof options[id].ajax.afterSend == 'function'){
+                options[id].ajax.afterSend();
             }
         });
 
@@ -276,7 +313,7 @@
             var tables = $('table');
 
             if (tables.length > 0) {
-                tables.forEach(function () {
+                $.each(tables, function(){
                     var _this = $(this),
                         id = _this.attr('id');
 
@@ -351,7 +388,7 @@
     }
 
     /**
-     * Load the table from source
+     * Load the table from direct data
      * @param {*} data
      * @param {*} table: target table element 
      * @param {*} id: table id attribute
@@ -430,9 +467,8 @@
             paginationHtml += '<button class="btn btn-default" disabled>•••</button>';
         }
 
-
         // left pages
-        if (pagination.left) {
+        if (pagination.left.length > 0) {
             pagination.left.forEach(el => {
                 paginationHtml += '<button data-index="' + el + '" class="btn btn-default">' + el + '</button>';
             });
@@ -442,7 +478,7 @@
         paginationHtml += '<button data-index="' + pagination.page + '" class="btn btn-default active">' + pagination.page + '</button>';
 
         // right pages
-        if (pagination.right) {
+        if (pagination.right.length > 0) {
             pagination.right.forEach(el => {
                 paginationHtml += '<button data-index="' + el + '" class="btn btn-default">' + el + '</button>';
             });
@@ -589,7 +625,7 @@
 
         if (options[id].table.actions) {
             rowContent += '<td><div class="btn-group dropleft">' +
-                '<button type="button" class="btn btn-md btn-' + (options[id].table.actionColor ? options[id].table.actionColor : 'primary') + ' dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
+                '<button type="button" class="btn btn-md btn-' + options[id].table.actionColor + ' dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
                 (language && language.actions ? language.actions : options[id].table.actionsText) +
                 '</button>' +
                 '<div class="dropdown-menu">';
@@ -662,9 +698,9 @@
      * Open search bar
      */
     $(document).on('click', '#search-on-table', function () {
-        var searchBar = $('#jqson-search');
+        var _this = $(this),
+            searchBar = _this.parents('#jqson-table').find('#jqson-search');
 
-        console.log(searchBar);
         if (searchBar.hasClass('d-none')) {
             searchBar.removeClass('d-none');
         } else {
@@ -726,8 +762,59 @@
 
 
     /****************************************
-     *        Option Loader Section
+     *        Select Section
      ****************************************/
+
+    /**
+     * Load the select
+     * @param {*} select: target select element 
+     * @param {*} id: select id attribute
+     */
+    function loadSelect(select, id) {
+        var data = null;
+
+        if (options[id].ajax) {
+            data = ajaxGetData(id);
+            if (data.results){
+                data = data.results;
+            }
+        } else if (options[id].results && options[id].results.length){
+            data = options[id].results;
+        } else {
+            console.log('There is no ajax request or valid data (select)');
+        }
+
+        if (data){
+            var optionHtml = optionBuilder(data, id);
+
+            if (optionHtml){
+                select.html(optionHtml);
+            } else {
+                console.log('There is no builded option content (select)');
+            }
+        } else {
+            console.log('No data (select)');
+        }
+    }
+
+    /**
+     * Load the select from direct data
+     * @param {*} select: target select element 
+     * @param {*} id: select id attribute
+     */
+    function loadSelectData(data, select, id) {
+        if (data){
+            var optionHtml = optionBuilder(data, id);
+
+            if (optionHtml){
+                select.html(optionHtml);
+            } else {
+                console.log('There is no builded option content (select)');
+            }
+        } else {
+            console.log('No data (select)');
+        }
+    }
 
     /**
      * 
@@ -744,36 +831,132 @@
         if (results && options[id].optionItem) {
             if (typeof results[0] === 'object') {
                 for (var key in results) {
-                    var option = options[id].optionItem(key, results[key], options[id].selectedValue);
-
-                    optionsHtml += option;
+                    optionsHtml += options[id].optionItem(key, results[key], options[id].selectedValue);
                 }
-
-                return optionsHtml;
             }
+        } else {
+            results.forEach(function(el){
+                var _el = Object.keys(el);
+
+                if (el && _el.length > 1){
+                    optionsHtml += '<option value="'+el[_el[0]]+'">'+el[_el[1]]+'</option>';
+                }
+            });
         }
+
+        return optionsHtml;
     }
+
+
+    /****************************************
+     *        List Section
+     ****************************************/
 
     /**
      * Load the select
      * @param {*} select: target select element 
      * @param {*} id: select id attribute
      */
-    function loadSelect(select, id) {
-        if (options[id].ajax) {
-            // get json data with ajax get request
-            var response = ajaxGetSelect(id);
+    function loadList(select, id) {
+        var data = null;
 
-            if (response) {
-                // build the select with data
-                var optionHtml = optionBuilder(response.results, id);
+        if (options[id].ajax) {
+            data = ajaxGetData(id);
+            if (data.results){
+                data = data.results;
+            }
+        } else if (options[id].results && options[id].results.length){
+            data = options[id].results;
+        } else {
+            console.log('There is no ajax request or valid data (select)');
+        }
+
+        if (data){
+            var optionHtml = listItemBuilder(data, id);
+
+            if (optionHtml){
                 select.html(optionHtml);
             } else {
-                console.log('There is no data.');
+                console.log('There is no builded option content (list)');
             }
         } else {
-            // ###
+            console.log('No data (list)');
         }
+    }
+
+    /**
+     * Load the select from direct data
+     * @param {*} select: target select element 
+     * @param {*} id: select id attribute
+     */
+    function loadListData(data, select, id, returnHtml) {
+        if (data){
+            var optionHtml = listItemBuilder(data, id);
+
+            if (optionHtml){
+                if (select){
+                    select.html(optionHtml);
+                } else if (returnHtml){
+                    return optionHtml;
+                }
+            } else {
+                console.log('There is no builded list item content (list)');
+            }
+        } else {
+            console.log('No data (list)');
+        }
+    }
+
+    /**
+     * 
+     * @param {*} data 
+     * @param {*} id 
+     */
+    function listItemBuilder(data, id) {
+        var itemHtml = '';
+
+        if (data && options[id].listItem) {
+            if (typeof data[0] === 'object') {
+                for (var key in data) {
+                    itemHtml += options[id].listItem(key, data[key], options[id].selectedValue);
+                }
+            }
+        } else if(data) {
+            // get array items, [{},{},{}]
+            if (data.length){
+                $.each(data, function(key, value){
+                    var _value = Object.keys(value);
+    
+                    if (value && _value.length > 1){
+                        if (options[id].itemType == 'a') {
+                            itemHtml += '<a class="list-group-item list-group-item-action" href="'+value[_value[0]]+'">'+value[_value[1]]+'</a>';
+                        } else if (options[id].itemType == 'button') {
+                            itemHtml += '<button type="button" class="list-group-item" data-value="'+value[_value[0]]+'">'+value[_value[1]]+'</button>';
+                        } else if (options[id].itemType == 'li') {
+                            itemHtml += '<li class="list-group-item" data-value="'+value[_value[0]]+'">'+value[_value[1]]+'</li>';
+                        }
+                    }
+                });
+            } else {
+                // object get items, {}
+                $.each(data, function(key, value){
+                    var _value = Object.keys(value);
+
+                    if (value && _value.length > 1){
+                        if (options[id].itemType == 'a') {
+                            itemHtml += '<a class="list-group-item list-group-item-action" href="'+key+'">'+value+'</a>';
+                        } else if (options[id].itemType == 'button') {
+                            itemHtml += '<button type="button" class="list-group-item" data-value="'+value[_value[0]]+'">'+value[_value[1]]+'</button>';
+                        } else if (options[id].itemType == 'li') {
+                            itemHtml += '<li class="list-group-item">'+value+'</li>';
+
+                        }
+                    }
+                });
+            }
+        }
+
+        return itemHtml;
     }
 
 
@@ -812,7 +995,7 @@
     };
 
     /**
-     * Load table from source
+     * Load table from direct data
      */
     $.fn.jqSonTableLoadData = function (data, customOptions) {
         var _this = $(this);
@@ -842,23 +1025,6 @@
     };
 
     /**
-     * JSON to select/option
-     */
-    $.fn.jqSonSelect = function (customOptions) {
-        var _this = $(this);
-
-        if (_this.length) {
-            var id = _this.attr('id');
-
-            if (customOptions) {
-                options[id] = $.extend(true, {}, selectDefaultOptions, customOptions);
-            }
-
-            loadSelect(_this, id);
-        }
-    };
-
-    /**
      * Reload table action
      */
     $.fn.jqSonTableReload = function () {
@@ -875,6 +1041,85 @@
 
         return this;
     };
+
+    /**
+     * JSON to select
+     */
+    $.fn.jqSonSelect = function (customOptions) {
+        var _this = $(this);
+
+        if (_this.length) {
+            var id = _this.attr('id');
+
+            if (customOptions) {
+                options[id] = $.extend(true, {}, selectDefaultOptions, customOptions);
+            }
+
+            loadSelect(_this, id);
+        }
+    };
+
+    /**
+     * Load select from direct data
+     */
+    $.fn.jqSonSelectLoadData = function(data, customOptions){
+        var _this = $(this);
+
+        if (_this.length) {
+            var id = _this.attr('id');
+
+            if (customOptions) {
+                options[id] = $.extend(true, {}, selectDefaultOptions, customOptions);
+            }
+
+            loadSelectData(data, _this, id);
+        }
+    }
+
+    /**
+     * JSON to list
+     */
+    $.fn.jqSonList = function (customOptions) {
+        var _this = $(this);
+        console.log( _this.attr('id'));
+        if (_this.length) {
+            var id = _this.attr('id');
+
+
+            if (customOptions) {
+                options[id] = $.extend(true, {}, listDefaultOptions, customOptions);
+            }
+
+            loadList(_this, id);
+        }
+    };
+
+    /**
+     * Load list from direct data
+     */
+    $.fn.jqSonListLoadData = function(data, customOptions){
+        var _this = $(this);
+
+        if (_this.length) {
+            var id = _this.attr('id');
+
+            if (customOptions) {
+                options[id] = $.extend(true, {}, listDefaultOptions, customOptions);
+            }
+
+            loadListData(data, _this, id);
+        }
+    }
+
+    $.jqSonListLoadData = function(data, customOptions, id){
+        if (id) {
+            if (customOptions) {
+                options[id] = $.extend(true, {}, listDefaultOptions, customOptions);
+            }
+
+            return loadListData(data, null, id, true);
+        }
+    }
 
     /**
      * Set language

@@ -1,3 +1,18 @@
+<<<<<<< HEAD
+v0.0.7 - 26.05.2019
+
++ Fixed pagination bug
++ Added JSON to list
++ Added li, a, and button listing types
+
+v0.0.6 - 25.05.2019
+
++ Removed unused fields
+=======
+v0.0.6 - 25.05.2019
++ Removed dunused fields
+>>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
+
 v0.0.5 - 24.05.2019
 
 + Fixed some logical issues

@@ -29,3 +29,30 @@
 .jqson-container .pagination button:focus {
     outline: 0 !important;
 }
+
+<<<<<<< HEAD
+.jqson-container .pagination button {
+    color: #5a5454;
+    background-color: #22A7F05d;
+    box-shadow: 0px 0px 5px 2px rgba(163, 163, 163, 0.1);
+    padding: 8px 16px;
+    margin: 5px;
+    transition: background-color .3s;
+    transition: color .3s;
+}
+
+.jqson-container .pagination button.active {
+    background-color: #22A7F0;
+    color: #ffffff;
+}
+
+.jqson-container .pagination button:hover:not(.active) {
+    background-color: #22A7F0;
+    color: #ffffff;
+}
+
+=======
+>>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
+.jqson-container table th {
+    text-transform: capitalize !important;
+}

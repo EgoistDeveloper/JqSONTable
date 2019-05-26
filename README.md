@@ -6,17 +6,23 @@ Dynamic and customizable json to table jquery plugin
     
 * JSON to Table
 * to Select
+* to List
 * to ...
 
-## Requirements
+## Available Languages 📖 
+
+* [English](README.md)
+* [Türkçe](README_tr-TR.md)
+
+## Requirements 🔨
 
 * [Jquery](https://jquery.com/)
 * [Bootstrap](https://getbootstrap.com/)
 * [Font Awesome](https://fontawesome.com/)
 
-This Jquery plugin uses some `Font Awesome` icons and `Bootstrap` clases.
+This Jquery plugin uses some `Font Awesome` icons and `Bootstrap` classes.
 
-#JSON to Table
+#JSON to Table  📍 
 
 ## Base JSON structure
 Table extension can only process the following json structure.The main parts of json tree is ** pagination ** , ** total_resuls ** (paginated items count) and ** results ** content.
@@ -271,3 +277,7 @@ var tableDefaultOptions = {
 | action | string | Action data key |
 | icon | string | Action item icon |
 | text | string | Action item text |
+
+# JSON to Select  📍 
+
+# JSON to List  📍 

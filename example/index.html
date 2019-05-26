@@ -115,7 +115,7 @@
                         return '<a class="font-weight-bold" href="profile/' + value
                             .id + '" target="_blank"><img src="' + value
                             .profile_image + '" height="100" width="100"/></a>';
-                    } else if (key == 'country'){
+                    } else if (key == 'country') {
                         return $.jqSonListLoadData(value, {
                             itemType: 'a'
                         }, 'my-list-id');

@@ -2,20 +2,12 @@
     "pagination": {
         "left": [],
         "right": [2, 3, 4, 5],
-<<<<<<< HEAD
         "page": 1,
-=======
-        "pcountry": 1,
->>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
         "start": 1,
         "end": 5,
         "last": 4
     },
-<<<<<<< HEAD
     "total_results": 4,
-=======
-    "total_results": 117,
->>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
     "results": [{
         "id": "1",
         "username": "Testa",
@@ -26,11 +18,7 @@
         "city": "Istanbul",
         "date": "01-02-2003 01:02:03"
     },{
-<<<<<<< HEAD
         "id": "2",
-=======
-        "id": "1",
->>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
         "username": "Testa 2",
         "gender": "Male",
         "full_name": "Yıldıray Eyüp Erdoğan",
@@ -39,11 +27,7 @@
         "city": "Istanbul",
         "date": "01-02-2003 01:02:03"
     },{
-<<<<<<< HEAD
         "id": "3",
-=======
-        "id": "1",
->>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
         "username": "Testa 3",
         "gender": "Male",
         "full_name": "Yıldıray Eyüp Erdoğan",
@@ -52,11 +36,7 @@
         "city": "Istanbul",
         "date": "01-02-2003 01:02:03"
     },{
-<<<<<<< HEAD
         "id": "4",
-=======
-        "id": "1",
->>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
         "username": "Testa 4",
         "gender": "Male",
         "full_name": "Yıldıray Eyüp Erdoğan",

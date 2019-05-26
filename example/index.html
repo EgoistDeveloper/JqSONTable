@@ -8,11 +8,7 @@
     <title>JqSON Table Examples</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
-<<<<<<< HEAD
     <link rel="stylesheet" href="./../src/jqson-table.css">
-=======
-    <link rel="stylesheet" href="./../src/jqson-table.min.css">
->>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
     <style>
     </style>
 </head>
@@ -24,19 +20,11 @@
                 <table id="mytable" class="table jqson-table"></table>
             </div>
             <div class="col-6">
-<<<<<<< HEAD
                 <table id="mytable-2" class="table jqson-table"></table>
             </div>
         </div>
         <div class="row">
             <table id="mytable-3" class="table jqson-table"></table>
-=======
-                <table id="mytable2" class="table jqson-table"></table>
-            </div>
-        </div>
-        <div class="row">
-            <table id="mytable3" class="table jqson-table"></table>
->>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
         </div>
     </div>
 </body>
@@ -44,91 +32,12 @@
 <footer>
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
-<<<<<<< HEAD
     <script src="./../src/jqson-table.js"></script>
 
     <script>
         $('#mytable').jqSonTable({
             ajax: {
                 url: './data.json'
-=======
-    <script src="./../src/jqson-table.min.js"></script>
-
-    <script>
-        var getTable2 = function () {
-            $('#mytable2').jqSonTable({
-                ajax: {
-                    url: './data2.json',
-                    success: getTable3
-                },
-                table: {
-                    except: [
-                        'id'
-                    ],
-                    rowItem: function (key, value) {
-                        if (key == 'username') {
-                            return '<a class="font-weight-bold" href="profile/' + value
-                                .id + '" target="_blank">' + value.username + '</a>';
-                        } else if (key == 'profile_image') {
-                            return '<a class="font-weight-bold" href="profile/' + value
-                                .id + '" target="_blank"><img src="' + value
-                                .profile_image + '" height="100" width="100"/></a>';
-                        }
-                    },
-                    actions: [{
-                            action: 'view profile',
-                            icon: 'fa fa-eye',
-                            text: 'View Profile'
-                        },
-                        {
-                            action: 'delete',
-                            icon: 'fa fa-trash',
-                            text: 'Delete'
-                        }
-                    ]
-                }
-            });
-        }
-        
-        var getTable3 = function () {
-            $('#mytable3').jqSonTable({
-                ajax: {
-                    url: './data2.json'
-                },
-                table: {
-                    except: [
-                        'id'
-                    ],
-                    rowItem: function (key, value) {
-                        if (key == 'username') {
-                            return '<a class="font-weight-bold" href="profile/' + value
-                                .id + '" target="_blank">' + value.username + '</a>';
-                        } else if (key == 'profile_image') {
-                            return '<a class="font-weight-bold" href="profile/' + value
-                                .id + '" target="_blank"><img src="' + value
-                                .profile_image + '" height="100" width="100"/></a>';
-                        }
-                    },
-                    actions: [{
-                            action: 'view profile',
-                            icon: 'fa fa-eye',
-                            text: 'View Profile'
-                        },
-                        {
-                            action: 'delete',
-                            icon: 'fa fa-trash',
-                            text: 'Delete'
-                        }
-                    ]
-                }
-            });
-        }
-        
-        $('#mytable').jqSonTable({
-            ajax: {
-                url: './data.json',
-                success: getTable2
->>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
             },
             table: {
                 except: [
@@ -157,7 +66,6 @@
                 ]
             }
         });
-<<<<<<< HEAD
 
         $('#mytable-2').jqSonTable({
             ajax: {
@@ -226,8 +134,6 @@
                 ]
             }
         });
-=======
->>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
     </script>
 </footer>
 

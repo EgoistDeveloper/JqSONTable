@@ -68,10 +68,7 @@
         ajax: {
             url: null,
             urlDelimeter: '?',
-<<<<<<< HEAD
             params: null,
-=======
->>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
             timeOut: 30000,
             async: false,
             beforeSend: null,

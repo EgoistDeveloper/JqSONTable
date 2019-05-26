@@ -8,7 +8,6 @@ Dynamic and customizable json to table jquery plugin
 * to Select
 * to ...
 
-<<<<<<< HEAD
 ## Requirements
 
 * [Jquery](https://jquery.com/)
@@ -17,8 +16,6 @@ Dynamic and customizable json to table jquery plugin
 
 This Jquery plugin uses some `Font Awesome` icons and `Bootstrap` clases.
 
-=======
->>>>>>> 0c5566ce761675c78d47d8fe0dc457b9912ba364
 #JSON to Table
 
 ## Base JSON structure

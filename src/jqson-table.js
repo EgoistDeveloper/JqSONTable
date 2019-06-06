@@ -42,6 +42,7 @@
         table: {
             headerOrder: true,
             search: true,
+            refresh: true,
             limit: true,
             pagination: true,
             rowItem: null,
@@ -302,24 +303,26 @@
      * @param {*} id: table id attribute
      */
     function tableLoader(initial_load, table, id) {
-        if (table) {
-            if (initial_load || diffMinutes(new Date(), tableLastUpdate) >= options[id].ajax.reloadDelay) {
-                loadTable(table, id);
-            }
-        } else {
-            var tables = $('table');
-
-            if (tables.length > 0) {
-                $.each(tables, function(){
-                    var _this = $(this),
-                        id = _this.attr('id');
-
-                    if (initial_load || diffMinutes(new Date(), tableLastUpdate) >= options[id].ajax.reloadDelay) {
-                        loadTable(_this, id);
-                    }
-                });
+        if (options[id]){
+            if (table) {
+                if (initial_load || diffMinutes(new Date(), tableLastUpdate) >= options[id].ajax.reloadDelay) {
+                    loadTable(table, id);
+                }
             } else {
-                clearInterval(tableUpdateLoop);
+                var tables = $('table');
+    
+                if (tables.length > 0) {
+                    $.each(tables, function(){
+                        var _this = $(this),
+                            id = _this.attr('id');
+    
+                        if (initial_load || diffMinutes(new Date(), tableLastUpdate) >= options[id].ajax.reloadDelay) {
+                            loadTable(_this, id);
+                        }
+                    });
+                } else {
+                    clearInterval(tableUpdateLoop);
+                }
             }
         }
     }
@@ -342,12 +345,12 @@
                     newTableHTML = '',
                     pagination = options[id].table.pagination,
                     paginationContent = '',
-                    resultsContent = response.pagination.page > 0 ? options[id].table.showingText.replace('#showing#', response.results.length).replace('#total#', response.total_results) : options[id].table.showingNoneText;
+                    resultsContent = response.pagination && response.pagination.page > 0 ? options[id].table.showingText.replace('#showing#', response.results.length).replace('#total#', response.total_results) : options[id].table.showingNoneText;
 
                 if (pagination && pagination === true) {
                     paginationContent = buildPagination(response.pagination);
                 } else if (typeof pagination == 'function') {
-                    paginationContent = pagination(response.pagination);
+                    paginationContent = response.pagination ? pagination(response.pagination) : '';
                 }
 
                 if (table.parent().attr('id') == 'jqson-table') {
@@ -362,9 +365,10 @@
                     if (tableContent) {
                         newTableHTML = '<div id="jqson-table" class="table-responsive jqson-container random-pagination">' +
                             '<div id="jqson-header" class="justify-content-between">' +
-                            '<div class="float-right options"><button id="search-on-table" type="button" class="button" title="Search in Table"><i class="fa fa-search"></i></button>' +
-                            '<button id="refresh-table" type="button" class="button" title="Reload Table Contents"> <i class="fa fa-sync"></i> </button></div>' +
-                            '<div id="jqson-search" class="row m-0 d-none"><div class="col-lg-11"><input id="table-search" type="search" class="form-control rounded-input" placeholder="Search"></div><div class="col-lg-1"><button id="table-search-button" type="button" class="btn btn-primary btn-rounded">Search</button></div></div>' +
+                            '<div class="float-right options">'+
+                            (options[id].table.search ? '<button id="search-on-table" type="button" class="button" title="Search in Table"><i class="fa fa-search"></i></button>' : '') +
+                            (options[id].table.refresh ? '<button id="refresh-table" type="button" class="button" title="Reload Table Contents"> <i class="fa fa-sync"></i> </button>' : '') +
+                            '</div><div id="jqson-search" class="row m-0 d-none"><div class="col-lg-11"><input id="table-search" type="search" class="form-control rounded-input" placeholder="Search"></div><div class="col-lg-1"><button id="table-search-button" type="button" class="btn btn-primary btn-rounded">Search</button></div></div>' +
                             '</div><br>' +
                             table[0].outerHTML.replace('</table>', tableContent + '</table>') +
                             '<div id="jqson-footer" class="row justify-content-between align-items-baseline" style="margin: 0px; padding: 0px 10px;"><div id="pagination" class="pagination">' +
@@ -396,16 +400,16 @@
                 newTableHTML = '',
                 pagination = options[id].table.pagination,
                 paginationContent = '',
-                resultsContent = data.pagination.page > 0 ? options[id].table.showingText.replace('#showing#', data.results.length).replace('#total#', data.total_results) : options[id].table.showingNoneText;
+                resultsContent =  data.pagination && data.pagination.page > 0 ? options[id].table.showingText.replace('#showing#', data.results.length).replace('#total#', data.total_results) : options[id].table.showingNoneText;
 
             if (pagination && pagination === true) {
                 paginationContent = buildPagination(data.pagination);
             } else if (typeof pagination == 'function') {
-                paginationContent = pagination(data.pagination);
+                paginationContent = data.pagination ? pagination(data.pagination) : '';
             }
 
             if (table.parent().attr('id') == 'jqson-table') {
-                table.html(tableContent);
+                table.html('').html(tableContent);
                 table.parent().find('#jqson-footer>#pagination').html(paginationContent);
                 table.parent().find('#jqson-results').html(resultsContent);
             } else {
@@ -416,9 +420,10 @@
                 if (tableContent) {
                     newTableHTML = '<div id="jqson-table" class="table-responsive jqson-container random-pagination">' +
                         '<div id="jqson-header" class="justify-content-between">' +
-                        '<div class="float-right options"><button id="search-on-table" type="button" class="button" title="Search in Table"><i class="fa fa-search"></i></button>' +
-                        '<button id="refresh-table" type="button" class="button" title="Reload Table Contents"> <i class="fa fa-sync"></i> </button></div>' +
-                        '<div id="jqson-search" class="row m-0 d-none"><div class="col-lg-11"><input id="table-search" type="search" class="form-control rounded-input" placeholder="Search"></div><div class="col-lg-1"><button id="table-search-button" type="button" class="btn btn-primary btn-rounded">Search</button></div></div>' +
+                        '<div class="float-right options">'+
+                        (options[id].table.search ? '<button id="search-on-table" type="button" class="button" title="Search in Table"><i class="fa fa-search"></i></button>' : '') +
+                        (options[id].table.refresh ? '<button id="refresh-table" type="button" class="button" title="Reload Table Contents"> <i class="fa fa-sync"></i> </button>' : '') +
+                        '</div><div id="jqson-search" class="row m-0 d-none"><div class="col-lg-11"><input id="table-search" type="search" class="form-control rounded-input" placeholder="Search"></div><div class="col-lg-1"><button id="table-search-button" type="button" class="btn btn-primary btn-rounded">Search</button></div></div>' +
                         '</div><br>' +
                         table[0].outerHTML.replace('</table>', tableContent + '</table>') +
                         '<div id="jqson-footer" class="row justify-content-between align-items-baseline" style="margin: 0px; padding: 0px 10px;"><div id="pagination" class="pagination">' +
@@ -426,6 +431,8 @@
                         '</div><div id="jqson-results">' + (resultsContent) + '</div></div></div>';
 
                     table.parent().html(newTableHTML);
+
+                    console.log(newTableHTML, 2);
                 }
             }
 
@@ -558,7 +565,7 @@
 
             // tfoot
             if (options[id].table.tfoot) {
-                tfoot = thead.replace('thead', 'tfoot');
+                tfoot = thead.replace('<thead', '<tfoot').replace('</thead', '</tfoot');
             }
         }
 
@@ -679,9 +686,11 @@
      */
     $(document).on('click', '#pagination button', function () {
         var _this = $(this),
-            table = _this.parents('#jqson-table').find('.jqson-table'),
+            table = _this.parents('#jqson-table').find('table'),
             id = table.attr('id'),
             index = _this.attr('data-index');
+
+console.log($(this).parents());
 
         options[id].pagination.page = index;
         tableLoader(true, table, id);
